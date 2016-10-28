@@ -6,8 +6,25 @@
   "scripts": {
     "test": "tap test/*/test.*.js"
   },
-  "author": "Rafał Michalski <royal@yeondir.com>",
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/royaltm/node-zmq-raft.git"
+  },
+  "engine-strict": true,
+  "engines": {
+    "node": ">=6"
+  },
+  "keywords": [
+    "raft",
+    "zmq",
+    "ha"
+  ],
+  "author": "Rafal Michalski <royal@yeondir.com>",
   "license": "LGPL-3.0",
+  "bugs": {
+    "url": "https://github.com/royaltm/node-zmq-raft/issues"
+  },
+  "homepage": "https://github.com/royaltm/node-zmq-raft#readme",
   "dependencies": {
     "mkdirp": "^0.5.1",
     "msgpack-lite": "^0.1.26",
