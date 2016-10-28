@@ -78,7 +78,7 @@ Clients can connect directly to raft server for:
 - requesting log updates (with REQUEST_UPDATE rpc)
 - retrieving log entries (with REQUEST_ENTRIES rpc)
 
-Clients can connect to state machine to retrieve current state directly or via raft server (via custom message type).
+Clients can connect to state machine to retrieve current state directly or via raft server (custom rpc type).
 
 A `ZmqRaftClient` class implements an easy to use rpc client socket.
 
@@ -87,12 +87,12 @@ Broadcasting state machine
 
 This repository includes one implementation of (state opaque) proxy state machine: `BroadcastStateMachine`.
 
-This implementation opens a ZMQ_PUB socket (when its peer is a leader) and broadcasts applied log entries.
-Clients shouls query raft (with REQEUST_URL rpc) for its broadcast url.
+Broadcasting state machine opens a ZMQ_PUB socket (when its peer is a leader) and broadcasts applied log entries.
+Clients should query zmq-raft (with REQEUST_URL rpc) for broadcast url.
 
-This will deliver state machine changes to any number of clients in real-time.
-When clients miss some entries they have to query raft server directly for
-missing entries with REQUEST_ENTRIES rpc.
+State machine changes will be fan out to any number of clients in real-time.
+
+When clients miss some entries they have to query zmq-raft for missing entries with REQUEST_ENTRIES rpc.
 
 This is implemented in `ZmqRaftSubscriber` class.
 
