@@ -72,6 +72,7 @@ resolve().then(host => {
       console.log(`${colors.cyan(peer.id)}: ${colors.grey(url)}`);
   }
 
+  console.log(`directory: ${colors.magenta(dir)}`);
   mkdirp.sync(dir);
 
   var persistence = new RaftPersistence(path.join(dir, 'raft.pers'), peers);
