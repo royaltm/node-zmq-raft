@@ -39,18 +39,18 @@ resolve().then(host => {
   else return [host];
 }).then(([me, ...peers]) => {
   if (peers.length === 0) {
+    dir = path.join(tmpdir, (id + 100).toString().substr(1));
     return (id) => {
       return {id: (id + 100).toString().substr(1), url: `tcp://${me}:${port+id}`, pub: `tcp://${me}:${port+100+id}`};
     };
-    dir = path.join(tmpdir, (id + 100).toString().substr(1));
   }
   else if (peers.includes(me)) {
     numpeers = peers.length;
     id = peers.indexOf(me) + 1;
+    dir = path.join(tmpdir, '00');
     return (id) => {
       return {id: (id + 100).toString().substr(1), url: `tcp://${peers[id - 1]}:${port}`, pub: `tcp://${peers[id - 1]}:${port+100}`};
     };
-    dir = path.join(tmpdir, '00');
   }
   else throw new Error('peers without us');
 }).then(genpeer => {
