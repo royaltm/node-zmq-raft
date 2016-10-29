@@ -8,7 +8,8 @@ const test = require('tap').test;
 const raft = require('../..');
 const ZmqProtocolSocket = raft.client.ZmqProtocolSocket;
 const FramesProtocol = raft.protocol.FramesProtocol;
-const zmq = require('zmq');
+const { ZmqSocket } = raft.utils.zmqsocket;
+const { ZMQ_LINGER } = require('zmq');
 
 test('should be a function', t => {
   t.type(ZmqProtocolSocket, 'function');
@@ -23,8 +24,9 @@ test('router', suite => {
     var socket = new ZmqProtocolSocket(url);
     return Promise.all([
       new Promise((resolve, reject) => {
-        router.on('message', (src, id, msg) => {
+        router.on('frames', (frames) => {
           try {
+            let [src, id, msg] = frames;
             t.type(src, Buffer);
             t.type(id, Buffer);
             t.strictEquals(id.length, 1);
@@ -78,8 +80,9 @@ test('router', suite => {
     var start = Date.now();
     return Promise.all([
       new Promise((resolve, reject) => {
-        router.on('message', listener = (src, id, msg) => {
+        router.on('frames', listener = (frames) => {
           try {
+            let [src, id, msg] = frames;
             t.type(src, Buffer);
             t.type(id, Buffer);
             t.strictEquals(id.length, 1);
@@ -127,7 +130,7 @@ test('router', suite => {
     ])
     .then(() => {
       socket.close();
-      router.removeListener('message', listener);
+      router.removeListener('frames', listener);
       router.unbindSync(url);
       router.close();
       t.ok(true);
@@ -200,7 +203,7 @@ test('router', suite => {
       })
       .then(() => {
         socket.close();
-        router.removeListener('message', listener);
+        router.removeListener('frames', listener);
         router.unbindSync(url);
         router.close();
       })
@@ -212,8 +215,8 @@ test('router', suite => {
 });
 
 function createZmqSocket(type) {
-  var url, sock = zmq.socket(type);
-  sock.setsockopt(zmq.ZMQ_LINGER, 0);
+  var url, sock = new ZmqSocket(type);
+  sock.setsockopt(ZMQ_LINGER, 0);
   do {
     url = 'tcp://127.0.0.1:' + ((Math.random()*20000 + 10000) >>> 0);
     try {

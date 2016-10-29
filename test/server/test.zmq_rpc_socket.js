@@ -4,10 +4,13 @@
  */
 "use strict";
 
+const crypto = require('crypto');
 const test = require('tap').test;
 const raft = require('../..');
+const { delay } = raft.utils.helpers;
 const { ZmqRpcSocket, RpcCancelError } = raft.server.ZmqRpcSocket;
-const zmq = require('zmq');
+const { ZmqSocket } = raft.utils.zmqsocket;
+const { ZMQ_LINGER } = require('zmq');
 
 test('should be a function', t => {
   t.type(ZmqRpcSocket, 'function');
@@ -23,8 +26,9 @@ test('router', suite => {
     t.strictEquals(socket.pending, null);
     return Promise.all([
       new Promise((resolve, reject) => {
-        router.on('message', (src, id, msg) => {
+        router.on('frames', (frames) => {
           try {
+            let [src, id, msg] = frames;
             t.type(src, Buffer);
             t.type(id, Buffer);
             t.type(msg, Buffer);
@@ -32,6 +36,9 @@ test('router', suite => {
             t.notStrictEquals(id.length, 0);
             t.strictEquals(msg.toString(), "foo");
             router.send([src, id, "foo", "bar"]);
+            router.send([src, id, "ala"]);
+            router.send([src, crypto.randomBytes(10), "kota"]);
+            router.send([src, id, "ma"]);
             resolve();
           } catch(e) { reject(e); }
         })
@@ -88,15 +95,10 @@ test('router', suite => {
         socket.close();
         t.ok(true);
       }),
-      new Promise((resolve, reject) => {
-        setTimeout(() => {
-          try {
-            t.type(socket.pending, Promise);
-            t.strictEquals(socket.reset(), socket);
-            t.strictEquals(socket.pending, null);
-            resolve();
-          } catch(e) { reject(e); }
-        }, 100);
+      delay(100).then(() => {
+        t.type(socket.pending, Promise);
+        t.strictEquals(socket.reset(), socket);
+        t.strictEquals(socket.pending, null);
       })
     ]).catch(t.threw);
   });
@@ -106,7 +108,7 @@ test('router', suite => {
     var [router, url] = createZmqSocket('router');
     router.unbindSync(url);
     router.close();
-    var socket = new ZmqRpcSocket(url);
+    var socket = new ZmqRpcSocket(url, {sockopts: {ZMQ_RECONNECT_IVL: 10}});
     var start = Date.now();
     return Promise.all([
       socket.request("foo").catch(err => {
@@ -115,8 +117,7 @@ test('router', suite => {
         t.strictEquals(err.message, "request cancelled");
         t.ok(Date.now() - start >= 100);
       }),
-      new Promise((resolve, reject) => setTimeout(resolve, 100))
-      .then(() => {
+      delay(100).then(() => {
         t.type(socket.pending, Promise);
         var promise = socket.reset().request("bar");
         t.strictEquals(socket.pending, promise);
@@ -127,12 +128,15 @@ test('router', suite => {
             t.type(res[0], Buffer);
             t.strictEquals(res[0].toString(), "baz");
           }),
-          new Promise((resolve, reject) => {
+          delay(500).then(() => new Promise((resolve, reject) => {
             var [router2, url2] = createZmqSocket('router', url);
             t.strictEquals(url, url2);
             router = router2;
-            router.on('message', (src, id, msg) => {
+            var ignoreTimes = 3;
+            router.on('frames', (frames) => {
+              if (ignoreTimes-- > 0) return;
               try {
+                let [src, id, msg] = frames;
                 t.type(src, Buffer);
                 t.type(id, Buffer);
                 t.type(msg, Buffer);
@@ -143,7 +147,7 @@ test('router', suite => {
                 resolve();
               } catch(e) { reject(e); }
             })
-          })
+          }))
         ]);
       })
       .then(() => {
@@ -169,8 +173,9 @@ test('router', suite => {
     var numrequests = 0;
     return Promise.all([
       new Promise((resolve, reject) => {
-        router.on('message', (src, id, msg) => {
+        router.on('frames', (frames) => {
           try {
+            let [src, id, msg] = frames;
             t.type(src, Buffer);
             t.type(id, Buffer);
             t.type(msg, Buffer);
@@ -210,8 +215,8 @@ test('router', suite => {
 });
 
 function createZmqSocket(type, url) {
-  var sock = zmq.socket(type);
-  sock.setsockopt(zmq.ZMQ_LINGER, 0);
+  var sock = new ZmqSocket(type);
+  sock.setsockopt(ZMQ_LINGER, 0);
   do {
     url || (url = 'tcp://127.0.0.1:' + ((Math.random()*20000 + 10000) >>> 0));
     try {

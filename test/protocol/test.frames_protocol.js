@@ -8,6 +8,7 @@ const test = require('tap').test;
 const raft = require('../..');
 const FramesProtocol = raft.protocol.FramesProtocol;
 const { ZmqRpcSocket, RpcCancelError } = raft.server.ZmqRpcSocket;
+const { ZmqSocket } = raft.utils.zmqsocket;
 const zmq = require('zmq');
 
 test('should be a function', t => {
@@ -257,7 +258,7 @@ test('FramesProtocol', suite => {
       .then(() => {
         return new Promise((resolve, reject) => {
           socket.close();
-          router.removeListener('message', listener);
+          router.removeListener('frames', listener);
           router.unbind(url, err => {
             if (err) return reject(err);
             router.close();
@@ -273,7 +274,7 @@ test('FramesProtocol', suite => {
 });
 
 function createZmqSocket(type, url) {
-  var sock = zmq.socket(type);
+  var sock = new ZmqSocket(type);
   sock.setsockopt(zmq.ZMQ_LINGER, 0);
   do {
     url || (url = 'tcp://127.0.0.1:' + ((Math.random()*20000 + 10000) >>> 0));
