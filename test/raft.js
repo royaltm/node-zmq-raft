@@ -48,7 +48,7 @@ resolve().then(host => {
     numpeers = peers.length;
     id = peers.indexOf(me) + 1;
     return (id) => {
-      return {id: (id + 100).toString().substr(1), url: `tcp://${peers[i - 1]}:${port}`, pub: `tcp://${peers[i - 1]}:${port+100}`};
+      return {id: (id + 100).toString().substr(1), url: `tcp://${peers[id - 1]}:${port}`, pub: `tcp://${peers[id - 1]}:${port+100}`};
     };
     dir = path.join(tmpdir, '00');
   }
