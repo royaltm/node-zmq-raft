@@ -134,7 +134,8 @@ dns.lookup(os.hostname(), (err, address, family) => {
         console.log(`last log index:  ${colors.magenta(lpad(lastIndex, 14))}`);
         console.log(`snapshot size:   ${colors.magenta(lpad(snapshotSize, 14))}`);
         if (urls) client.setUrls(urls);
-      });
+      })
+      .catch(err => console.log(colors.red(`ERROR: ${err}`)));
     }
 
     initializeContext(repl.context);
