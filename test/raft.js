@@ -30,6 +30,7 @@ numpeers>>>=0
 id>>>=0
 
 var port = (process.env.PORT || 8000) & 0xffff;
+var dir;
 
 resolve().then(host => {
   if (hosts && hosts.length) {
@@ -41,6 +42,7 @@ resolve().then(host => {
     return (id) => {
       return {id: (id + 100).toString().substr(1), url: `tcp://${me}:${port+id}`, pub: `tcp://${me}:${port+100+id}`};
     };
+    dir = path.join(tmpdir, (id + 100).toString().substr(1));
   }
   else if (peers.includes(me)) {
     numpeers = peers.length;
@@ -48,6 +50,7 @@ resolve().then(host => {
     return (id) => {
       return {id: (id + 100).toString().substr(1), url: `tcp://${peers[i - 1]}:${port}`, pub: `tcp://${peers[i - 1]}:${port+100}`};
     };
+    dir = path.join(tmpdir, '00');
   }
   else throw new Error('peers without us');
 }).then(genpeer => {
@@ -69,11 +72,11 @@ resolve().then(host => {
       console.log(`${colors.cyan(peer.id)}: ${colors.grey(url)}`);
   }
 
-  mkdirp.sync(path.join(tmpdir, myId));
+  mkdirp.sync(dir);
 
-  var persistence = new RaftPersistence(path.join(tmpdir, myId, 'raft.pers'), peers);
-  var log = new FileLog(path.join(tmpdir, myId, 'log'), path.join(tmpdir, myId, 'snap'));
-  var stateMachine = new BroadcastStateMachine(path.join(tmpdir, myId, 'state.pers'), me.pub, options)
+  var persistence = new RaftPersistence(path.join(dir, 'raft.pers'), peers);
+  var log = new FileLog(path.join(dir, 'log'), path.join(dir, 'snap'));
+  var stateMachine = new BroadcastStateMachine(path.join(dir, 'state.pers'), me.pub, options)
 
   return Promise.all([log.ready(),stateMachine.ready(),persistence.ready()]).then(() => {
     var promises = [];
