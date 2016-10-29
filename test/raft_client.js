@@ -19,6 +19,7 @@ const FileLog = require('../lib/server/filelog');
 const BroadcastStateMachine = require('../lib/server/broadcast_state_machine');
 const RaftPersistence = require('../lib/server/raft_persistence');
 
+const { lpad } = require('../lib/utils/helpers');
 const { genIdent, isIdent } = require('../lib/utils/id');
 const msgpack = require('msgpack-lite');
 
@@ -42,10 +43,22 @@ dns.lookup(os.hostname(), (err, address, family) => {
     repl.on('reset', initializeContext);
     repl.defineCommand('peers', {
       help: 'Show cluster config',
-      action: function(name) {
-        this.lineParser.reset();
-        this.bufferedCommand = '';
-        listPeers().then(() => this.displayPrompt());
+      action: function() {
+        listPeers().then(() => {
+          this.lineParser.reset();
+          this.bufferedCommand = '';
+          this.displayPrompt()
+        });
+      }
+    });
+    repl.defineCommand('info', {
+      help: 'Show log information of a specified peer or all of them',
+      action: function(id) {
+        showInfo(id).then(() => {
+          this.lineParser.reset();
+          this.bufferedCommand = '';
+          this.displayPrompt()
+        });
       }
     });
 
@@ -88,7 +101,7 @@ dns.lookup(os.hostname(), (err, address, family) => {
       }
     }
 
-    function listPeers()  {
+    function listPeers() {
       return client.requestConfig().then(peers => {
         console.log(colors.magenta(`Cluster ${colors.yellow(options.secret)} peers:`))
         for(let id in peers.urls) {
@@ -100,6 +113,28 @@ dns.lookup(os.hostname(), (err, address, family) => {
             console.log(`${colors.cyan(id)}: ${colors.grey(url)}`);
         }
       }, err => console.warn(err.stack));
+    }
+
+    function showInfo(id) {
+      var urls, anyPeer = false;
+      if (client.peers.has(id)) {
+        urls = client.urls;
+        client.setUrls(client.peers.get(id));
+        anyPeer = true;
+      }
+      return client.requestLogInfo(anyPeer, 5000)
+      .then(({isLeader, leaderId, currentTerm, firstIndex, lastApplied, commitIndex, lastIndex, snapshotSize}) => {
+        if (!anyPeer) assert(isLeader);
+        console.log(colors.grey(`Log information for: "${isLeader ? colors.green(leaderId) : colors.yellow(id)}"`));
+        console.log(`leader:          ${isLeader ? colors.green('yes') : colors.cyan('no')}`);
+        console.log(`current term:    ${colors.magenta(lpad(currentTerm, 14))}`);
+        console.log(`first log index: ${colors.magenta(lpad(firstIndex, 14))}`);
+        console.log(`last applied:    ${colors.magenta(lpad(lastApplied, 14))}`);
+        console.log(`commit index:    ${colors.magenta(lpad(commitIndex, 14))}`);
+        console.log(`last log index:  ${colors.magenta(lpad(lastIndex, 14))}`);
+        console.log(`snapshot size:   ${colors.magenta(lpad(snapshotSize, 14))}`);
+        if (urls) client.setUrls(urls);
+      });
     }
 
     initializeContext(repl.context);
@@ -152,4 +187,18 @@ for(var line of db.createDataExporter()) {
 }
 encodeStream.end();
 
+var z=0,sendmore=()=>client.requestUpdate(show(genIdent()), msgpack.encode({ka:'rafa',z:++z,pid:process.pid,time:new Date().toJSON()})).then(()=>setTimeout(sendmore,Math.random()*500>>>0),console.warn);
+function show(x) {console.log(x);return x;}
+
+var state={x:0,y:0,z:0};
+function verify(e) {
+  var d=e[1], {x,y,z}=d;
+  if (d.ka==='rafa') {
+    if ('x' in d) { console.log('x=%s',x); assert(x===state.x+1); state.x=x; }
+    if ('y' in d) { console.log('y=%s',y); assert(y===state.y+1); state.y=y; }
+    if ('z' in d) { console.log('z=%s',z); assert(z===state.z+1); state.z=z; }
+  }
+  else console.log('unknown: %j', d);
+}
+subs.on('data',verify).on('error',e=>{console.warn(e.stack);process.exit(1)}).on('fresh',()=>console.log('FRESH')).on('stale',c=>console.log('STALE %s', c)).on('timeout',()=>console.log('TIMEOUT'));null
 */
