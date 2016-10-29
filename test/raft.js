@@ -41,7 +41,7 @@ resolve().then(host => {
   if (peers.length === 0) {
     dir = path.join(tmpdir, (id + 100).toString().substr(1));
     return (id) => {
-      return {id: (id + 100).toString().substr(1), url: `tcp://${me}:${port+id}`, pub: `tcp://${me}:${port+100+id}`};
+      return {id: (id + 100).toString().substr(1), url: `tcp://${me}:${port+id}`, pub: {url:`tcp://${me}:${port+100+id}`}};
     };
   }
   else if (peers.includes(me)) {
@@ -49,7 +49,13 @@ resolve().then(host => {
     id = peers.indexOf(me) + 1;
     dir = path.join(tmpdir, '00');
     return (id) => {
-      return {id: (id + 100).toString().substr(1), url: `tcp://${peers[id - 1]}:${port}`, pub: `tcp://${peers[id - 1]}:${port+100}`};
+      return {id: (id + 100).toString().substr(1),
+              url: `tcp://${peers[id - 1]}:${port}`,
+              bindUrl: `tcp://*:${port}`
+              pub: {
+                url:`tcp://${peers[id - 1]}:${port+100}`,
+                bindUrl:`tcp://*:${port+100}`
+              }};
     };
   }
   else throw new Error('peers without us');
@@ -77,7 +83,8 @@ resolve().then(host => {
 
   var persistence = new RaftPersistence(path.join(dir, 'raft.pers'), peers);
   var log = new FileLog(path.join(dir, 'log'), path.join(dir, 'snap'));
-  var stateMachine = new BroadcastStateMachine(path.join(dir, 'state.pers'), me.pub, options)
+  if (me.pub.bindUrl) options.bindUrl = me.pub.bindUrl;
+  var stateMachine = new BroadcastStateMachine(path.join(dir, 'state.pers'), me.pub.url, options);
 
   return Promise.all([log.ready(),stateMachine.ready(),persistence.ready()]).then(() => {
     var promises = [];
@@ -93,6 +100,7 @@ resolve().then(host => {
     else promises.push(persistence.rotate({}));
     return Promise.all(promises);
   }).then(() => {
+    if (me.bindUrl) options.bindUrl = me.bindUrl;
     var raft = new Raft(myId, persistence, log, stateMachine, options);
 
     raft.on('error', err => {
@@ -110,6 +118,7 @@ resolve().then(host => {
     });
   });
 }).catch(err => {
+  console.warn(colors.bgRed.yellow("FATAL ERROR"));
   console.warn(err.stack)
 });
 
