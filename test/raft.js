@@ -51,7 +51,7 @@ resolve().then(host => {
     return (id) => {
       return {id: (id + 100).toString().substr(1),
               url: `tcp://${peers[id - 1]}:${port}`,
-              bindUrl: `tcp://*:${port}`
+              bindUrl: `tcp://*:${port}`,
               pub: {
                 url:`tcp://${peers[id - 1]}:${port+100}`,
                 bindUrl:`tcp://*:${port+100}`
