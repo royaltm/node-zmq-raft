@@ -28,7 +28,7 @@
   "dependencies": {
     "mkdirp": "^0.5.1",
     "msgpack-lite": "^0.1.26",
-    "zmq": "^2.15.2"
+    "zmq": "~2.15.2"
   },
   "devDependencies": {
     "ben": "0.0.0",
