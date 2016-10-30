@@ -191,6 +191,9 @@ encodeStream.end();
 var z=0,sendmore=()=>client.requestUpdate(show(genIdent()), msgpack.encode({ka:'rafa',z:++z,pid:process.pid,time:new Date().toJSON()})).then(()=>setTimeout(sendmore,Math.random()*500>>>0),console.warn);
 function show(x) {console.log(x);return x;}
 
+var sizer = (entries) => entries.reduce((a,e) => a + e.length, 0);
+client.requestEntries(1, (status, entries, last) => {console.log('%s count: %s size: %s last index: %s', status, entries.length, sizer(entries), last);}).then(console.log,console.warn)
+
 var state={x:0,y:0,z:0};
 function verify(e) {
   var d=e[1], {x,y,z}=d;
@@ -202,4 +205,6 @@ function verify(e) {
   else console.log('unknown: %j', d);
 }
 subs.on('data',verify).on('error',e=>{console.warn(e.stack);process.exit(1)}).on('fresh',()=>console.log('FRESH')).on('stale',c=>console.log('STALE %s', c)).on('timeout',()=>console.log('TIMEOUT'));null
+subs.pause();
+subs.resume();
 */
