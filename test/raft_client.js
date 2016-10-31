@@ -9,9 +9,12 @@ const dns = require('dns');
 const zmq = require('zmq');
 const colors = require('colors/safe');
 
+const raft = require('..');
+const { SnapshotChunk } = raft.common;
+
 const { createRepl } = require('../repl');
 
-const { LogEntry } = require('../lib/common/log_entry');
+const { LogEntry, UpdateRequest } = require('../lib/common/log_entry');
 const SnapshotFile = require('../lib/common/snapshotfile');
 const ZmqRaftClient = require('../lib/client/zmq_raft_client');
 const ZmqRaftSubscriber = require('../lib/client/zmq_raft_subscriber');
@@ -86,6 +89,8 @@ dns.lookup(os.hostname(), (err, address, family) => {
         RaftPersistence,
         ZmqRaftSubscriber,
         LogEntry,
+        UpdateRequest,
+        SnapshotChunk,
         SnapshotFile,
         ZmqRaftClient,
         FileLog,
@@ -93,7 +98,8 @@ dns.lookup(os.hostname(), (err, address, family) => {
         isIdent,
         msgpack,
         ben,
-        zmq
+        zmq,
+        raft
       });
 
       if (process.argv.length > 2) {
@@ -102,7 +108,7 @@ dns.lookup(os.hostname(), (err, address, family) => {
     }
 
     function listPeers() {
-      return client.requestConfig().then(peers => {
+      return client.requestConfig(5000).then(peers => {
         console.log(colors.magenta(`Cluster ${colors.yellow(options.secret)} peers:`))
         for(let id in peers.urls) {
           let url = peers.urls[id];
@@ -112,7 +118,7 @@ dns.lookup(os.hostname(), (err, address, family) => {
           else
             console.log(`${colors.cyan(id)}: ${colors.grey(url)}`);
         }
-      }, err => console.warn(err.stack));
+      }, err => console.log(colors.red(`ERROR: ${err}`)));
     }
 
     function showInfo(id) {
@@ -188,21 +194,36 @@ for(var line of db.createDataExporter()) {
 }
 encodeStream.end();
 
-var z=0,sendmore=()=>client.requestUpdate(show(genIdent()), msgpack.encode({ka:'rafa',z:++z,pid:process.pid,time:new Date().toJSON()})).then(()=>setTimeout(sendmore,Math.random()*500>>>0),console.warn);
+
+var v=740,sendmore=()=>client.requestUpdate(show(genIdent()), msgpack.encode({ka:'rafa',v:++v,pid:process.pid,time:new Date().toJSON()})).then(()=>setTimeout(sendmore,Math.random()*500>>>0),console.warn);
+
+
+
 function show(x) {console.log(x);return x;}
+var v=35939,sendmore=()=>{subs.write(new UpdateRequest(msgpack.encode({ka:'rafa',v:++v,pid:process.pid,time:new Date().toJSON()}),show(genIdent())))&&setTimeout(sendmore,500 + (Math.random()*5000>>>0))||subs.once('drain',sendmore);}
 
 var sizer = (entries) => entries.reduce((a,e) => a + e.length, 0);
 client.requestEntries(1, (status, entries, last) => {console.log('%s count: %s size: %s last index: %s', status, entries.length, sizer(entries), last);}).then(console.log,console.warn)
 
-var state={x:0,y:0,z:0};
-function verify(e) {
-  var d=e[1], {x,y,z}=d;
-  if (d.ka==='rafa') {
-    if ('x' in d) { console.log('x=%s',x); assert(x===state.x+1); state.x=x; }
-    if ('y' in d) { console.log('y=%s',y); assert(y===state.y+1); state.y=y; }
-    if ('z' in d) { console.log('z=%s',z); assert(z===state.z+1); state.z=z; }
+var state={x:0,y:0,z:0,v:0};
+function verify(chunk) {
+  if (chunk.isSnapshotChunk) console.log('snapshot: (%s) index: %s bytes: %s/%s', chunk.length, chunk.logIndex, chunk.snapshotByteOffset, chunk.snapshotTotalLength);
+  else {
+    assert(chunk.isLogEntry);
+    console.log('entry: (%s) type: %s term: %s index: %s', chunk.length, chunk.entryType, chunk.readEntryTerm(), chunk.logIndex);
+    var d = msgpack.decode(chunk.readEntryData());
+    if (d && 'object' === typeof d) {
+      var {x,y,z,v} = d;
+      if (d.ka==='rafa') {
+        if ('x' in d) { console.log('x=%s',x); assert(x===state.x+1); state.x=x; }
+        if ('y' in d) { console.log('y=%s',y); assert(y===state.y+1); state.y=y; }
+        if ('z' in d) { console.log('z=%s',z); assert(z===state.z+1); state.z=z; }
+        if ('v' in d) { console.log('v=%s',v); assert(v===state.v+1); state.v=v; }
+        return;
+      }
+    }
+    else console.log('unknown: %j', d);
   }
-  else console.log('unknown: %j', d);
 }
 subs.on('data',verify).on('error',e=>{console.warn(e.stack);process.exit(1)}).on('fresh',()=>console.log('FRESH')).on('stale',c=>console.log('STALE %s', c)).on('timeout',()=>console.log('TIMEOUT'));null
 subs.pause();
