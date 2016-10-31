@@ -79,8 +79,9 @@ test('isIdent', t => {
 
 test('getSeconds', t => {
   t.throws(() => id.getSeconds());
+  t.strictEquals(id.getSeconds(Buffer.alloc(12)), 0);
   t.strictEquals(id.getSeconds('5816b41e26f27e0494708988'), 1477882910);
-  t.strictEquals(id.getSeconds(Buffer.from('5816b41e26f27e0494708988', 'hex')), 1477882910);
+  t.strictEquals(id.getSeconds(Buffer.from('0000005816b41e26f27e0494708988', 'hex'), 3), 1477882910);
   t.strictEquals(id.getSeconds('WBa0HibyfgSUcImI'), 1477882910);
   t.type(id.getSeconds(id.genIdent('buffer')), 'number');
   t.type(id.getSeconds(id.genIdent()), 'number');

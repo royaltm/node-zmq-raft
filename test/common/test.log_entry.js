@@ -42,6 +42,9 @@ test('hasRequestExpired', t => {
   var req = Buffer.alloc(12);
   t.strictEquals(hasRequestExpired(req), true);
   t.strictEquals(hasRequestExpired('000000000000000000000000'), true);
+  t.strictEquals(hasRequestExpired('ffffffffffffffffffffffff'), false);
+  t.strictEquals(hasRequestExpired(Buffer.from('000000000000000000000000ffffffffffffffffffffffff','hex'), 12), false);
+  t.strictEquals(hasRequestExpired(Buffer.from('ffffffffffffffffffffffff000000000000000000000000','hex'), 12), true);
   t.strictEquals(hasRequestExpired(raft.utils.id.genIdent('buffer')), false);
   t.strictEquals(hasRequestExpired(raft.utils.id.genIdent()), false);
   req.writeUInt32BE((Date.now() - raft.common.constants.REQUEST_UPDATE_TTL + 2000) / 1000 >>> 0, 0);
