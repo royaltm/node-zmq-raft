@@ -5,7 +5,6 @@
 "use strict";
 
 const test = require('tap').test;
-const crypto = require('crypto');
 const raft = require('../..');
 const { id } = raft.utils;
 
