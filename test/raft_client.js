@@ -73,7 +73,7 @@ dns.lookup(os.hostname(), (err, address, family) => {
       client && client.close();
       subs && subs.close();
 
-      client = new ZmqRaftClient(options);
+      client = new ZmqRaftClient(Object.assign({lazy: true}, options));
       subs = new ZmqRaftSubscriber(Object.assign({lastIndex: 0}, options));
       subs.on('error', err => {
         console.warn("ERROR in subscriber: %s", err);
@@ -150,6 +150,7 @@ dns.lookup(os.hostname(), (err, address, family) => {
 });
 
 /*
+function show(x) {console.log(x);return x;}
 
 subs.on('data',e=>console.log(e)).on('error',e=>console.warn(e.stack)).on('fresh',()=>console.log('FRESH')).on('stale',()=>console.log('STALE')).on('timeout',()=>console.log('TIMEOUT'));null
 subs.sub.subscribe('')
@@ -176,6 +177,25 @@ logz=ent.map(e=>new LogEntry(e))
 
 var ent=0;ben.async(1, cb=>client.requestEntries(0, (status, entries, last) => {ent+=entries.length}).then(cb,console.warn),ms=>console.log('ms: %s %s',ms,ent));
 
+var data = msgpack.encode({foo: 'bar'}),idreq=Buffer.alloc(12);
+ben.async(100, cb=>client.requestUpdate(genIdent(idreq),data).then(cb,console.warn),ms=>console.log('ms: %s',ms));
+
+function show(x) {console.log(x);return x;}
+[
+"581d4a5c26f27e27889d4e8f",
+"581d4a5c26f27e27889d4e90",
+"581d4a5c26f27e27889d4e91",
+"581d4a5c26f27e27889d4e92",
+"581d4a5c26f27e27889d4e93",
+"581d4a5c26f27e27889d4e94",
+"581d4a5c26f27e27889d4e95",
+"581d4a5c26f27e27889d4e96",
+"581d4a5c26f27e27889d4e97",
+"581d4a5c26f27e27889d4e98",
+].forEach((req,i) => client.requestUpdate(show(req),msgpack.encode({foo: 'bar', i:i})).then(idx=>console.log('ok %s',idx),console.warn));
+for(var i=0; i < 10; ++i) console.log(`"${genIdent()}",`);
+
+
 ent.map(e=>msgpack.decode(e.slice(20)))[0]
 var data = msgpack.encode({foo: 'bar'})
 client.requestUpdate(genIdent(), msgpack.encode({foo: 'bar'})).then(console.log,console.warn)
@@ -195,12 +215,11 @@ for(var line of db.createDataExporter()) {
 encodeStream.end();
 
 
-var v=740,sendmore=()=>client.requestUpdate(show(genIdent()), msgpack.encode({ka:'rafa',v:++v,pid:process.pid,time:new Date().toJSON()})).then(()=>setTimeout(sendmore,Math.random()*500>>>0),console.warn);
 
-
+{ x: 1206513, y: 1196252, z: 1196015, v: 5 }
 
 function show(x) {console.log(x);return x;}
-var v=35939,sendmore=()=>{subs.write(new UpdateRequest(msgpack.encode({ka:'rafa',v:++v,pid:process.pid,time:new Date().toJSON()}),show(genIdent())))&&setTimeout(sendmore,500 + (Math.random()*5000>>>0))||subs.once('drain',sendmore);}
+var z=451058,sendmore=()=>{subs.write(new UpdateRequest(msgpack.encode({ka:'rafa',z:++z,pid:process.pid,time:new Date().toJSON()}),show(genIdent())))&&setTimeout(sendmore,(Math.random()*500>>>0))||subs.once('drain',sendmore);}
 
 var sizer = (entries) => entries.reduce((a,e) => a + e.length, 0);
 client.requestEntries(1, (status, entries, last) => {console.log('%s count: %s size: %s last index: %s', status, entries.length, sizer(entries), last);}).then(console.log,console.warn)
@@ -210,7 +229,7 @@ function verify(chunk) {
   if (chunk.isSnapshotChunk) console.log('snapshot: (%s) index: %s bytes: %s/%s', chunk.length, chunk.logIndex, chunk.snapshotByteOffset, chunk.snapshotTotalLength);
   else {
     assert(chunk.isLogEntry);
-    console.log('entry: (%s) type: %s term: %s index: %s', chunk.length, chunk.entryType, chunk.readEntryTerm(), chunk.logIndex);
+//    console.log('entry: (%s) type: %s term: %s index: %s', chunk.length, chunk.entryType, chunk.readEntryTerm(), chunk.logIndex);
     var d = msgpack.decode(chunk.readEntryData());
     if (d && 'object' === typeof d) {
       var {x,y,z,v} = d;
