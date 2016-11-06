@@ -177,8 +177,6 @@ test('UpdateRequest', t => {
   t.strictEquals(req.byteLength, buf.byteLength);
   t.strictEquals(UpdateRequest.isUpdateRequest(req), true);
   t.strictEquals(UpdateRequest.isUpdateRequest(buf), false);
-  t.strictEquals(req.isUpdateRequest, true);
-  t.strictEquals(buf.isUpdateRequest, undefined);
   t.type(req.requestId, 'string');
 
   req = new UpdateRequest(buf);
@@ -188,24 +186,20 @@ test('UpdateRequest', t => {
   t.strictEquals(req.buffer, buf.buffer);
   t.strictEquals(req.byteOffset, buf.byteOffset);
   t.strictEquals(req.byteLength, buf.byteLength);
-  t.strictEquals(UpdateRequest.isUpdateRequest(req), true);
+  t.strictEquals(UpdateRequest.isUpdateRequest(req), false);
   t.strictEquals(UpdateRequest.isUpdateRequest(buf), false);
-  t.strictEquals(req.isUpdateRequest, true);
-  t.strictEquals(buf.isUpdateRequest, undefined);
-  t.type(req.requestId, 'string');
+  t.type(req.requestId, 'undefined');
 
   t.test('bufferToUpdateRequest', t => {
     var buf = Buffer.from([0xc0]);
-    var req = UpdateRequest.bufferToUpdateRequest(buf);
+    var req = UpdateRequest.bufferToUpdateRequest(buf, raft.utils.id.genIdent('buffer'));
     t.type(req, UpdateRequest);
     t.type(req, Buffer);
     t.strictEquals(req, buf);
     t.strictEquals(UpdateRequest.isUpdateRequest(req), true);
     t.strictEquals(UpdateRequest.isUpdateRequest(buf), true);
-    t.strictEquals(req.isUpdateRequest, true);
-    t.strictEquals(buf.isUpdateRequest, true);
-    t.type(buf.requestId, 'string');
-    t.type(req.requestId, 'string');
+    t.type(buf.requestId, Buffer);
+    t.type(req.requestId, Buffer);
     t.end();
   });
 
