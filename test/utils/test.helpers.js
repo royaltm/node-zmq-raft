@@ -88,12 +88,12 @@ test('delay', t => {
   return Promise.all([
     helpers.delay(25).then(res => {
       var time = Date.now() - start;
-      t.ok(time >= 25, 'was: ' + time);
+      t.ok(time >= 24, 'was: ' + time);
       t.strictEquals(res, void 0);
     }),
     helpers.delay(35, Symbol.for('foo')).then(res => {
       var time = Date.now() - start;
-      t.ok(time >= 35, 'was: ' + time);
+      t.ok(time >= 34, 'was: ' + time);
       t.strictEquals(res, Symbol.for('foo'));
     }),
   ]).then(() => t.ok(true)).catch(t.throws);
@@ -134,8 +134,19 @@ test('parsePeers', t => {
   t.throws(() => helpers.parsePeers({}), TypeError);
   t.throws(() => helpers.parsePeers(0), TypeError);
   t.throws(() => helpers.parsePeers(''), TypeError);
+  t.throws(() => helpers.parsePeers(['']), TypeError);
+  t.throws(() => helpers.parsePeers([['']]), TypeError);
+  t.throws(() => helpers.parsePeers([['','x']]), TypeError);
+  t.throws(() => helpers.parsePeers([['x','']]), TypeError);
+  t.throws(() => helpers.parsePeers([{id:''}]), TypeError);
+  t.throws(() => helpers.parsePeers([{url:''}]), TypeError);
+  t.throws(() => helpers.parsePeers([{id: 'foo', url:''}]), TypeError);
   t.type(map = helpers.parsePeers([]), Map);
   t.strictEquals(map.size, 0);
+
+  t.type(map = helpers.parsePeers([['foo']]), Map);
+  t.strictEquals(map.size, 1);
+  t.deepEquals(Array.from(map), [['foo', 'foo']]);
 
   t.type(map = helpers.parsePeers(['foo', 'bar', 'baz']), Map);
   t.strictEquals(map.size, 3);
@@ -171,5 +182,36 @@ test('regexpEscape', t => {
   t.strictEquals(helpers.regexpEscape('*'), '\\*');
   t.ok(new RegExp(helpers.regexpEscape('*')).test('*'));
   t.ok(new RegExp(helpers.regexpEscape('-/\\^$*+?.()|[]{}')).test('-/\\^$*+?.()|[]{}'));
+  t.end();
+});
+
+test('isNonEmptyString', t => {
+  t.strictEquals(helpers.isNonEmptyString(), false);
+  t.strictEquals(helpers.isNonEmptyString(''), false);
+  t.strictEquals(helpers.isNonEmptyString([]), false);
+  t.strictEquals(helpers.isNonEmptyString(0), false);
+  t.strictEquals(helpers.isNonEmptyString(1), false);
+  t.strictEquals(helpers.isNonEmptyString({}), false);
+  t.strictEquals(helpers.isNonEmptyString(new Date), false);
+  t.strictEquals(helpers.isNonEmptyString(Date), false);
+  t.strictEquals(helpers.isNonEmptyString(' '), true);
+  t.strictEquals(helpers.isNonEmptyString('1'), true);
+  t.strictEquals(helpers.isNonEmptyString('0'), true);
+  t.strictEquals(helpers.isNonEmptyString('foo'), true);
+  t.end();
+});
+
+test('majorityOf', t => {
+  t.strictEquals(helpers.majorityOf(0), 1);
+  t.strictEquals(helpers.majorityOf(1), 1);
+  t.strictEquals(helpers.majorityOf(2), 2);
+  t.strictEquals(helpers.majorityOf(3), 2);
+  t.strictEquals(helpers.majorityOf(4), 3);
+  t.strictEquals(helpers.majorityOf(5), 3);
+  t.strictEquals(helpers.majorityOf(6), 4);
+  t.strictEquals(helpers.majorityOf(7), 4);
+  t.strictEquals(helpers.majorityOf(8), 5);
+  t.strictEquals(helpers.majorityOf(9), 5);
+  t.strictEquals(helpers.majorityOf(10), 6);
   t.end();
 });
