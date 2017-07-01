@@ -1,7 +1,7 @@
-ZMQ RAFT protocol
+ØMQ RAFT protocol
 =================
 
-ZMQ RAFT protocol messages follow the ZMQ standard and consist of ZMQ [frames](https://rfc.zeromq.org/spec:23/ZMTP). http://zguide.zeromq.org/page:all#ZeroMQ-is-Not-a-Neutral-Carrier
+ØMQ RAFT protocol messages follow the ØMQ standard and consist of ØMQ [frames](https://rfc.zeromq.org/spec:23/ZMTP). http://zguide.zeromq.org/page:all#ZeroMQ-is-Not-a-Neutral-Carrier
 
 Data types
 ----------
@@ -73,12 +73,12 @@ zmq frame body as a bool: True
 offs.| value
    0 | 0x01
 
-zmq frame body as an json: null
+zmq frame body as a json: null
 
 offs.| value
    0 | 0xc0
 
-zmq frame body as an json: [42, "foo", false]
+zmq frame body as a json: [42, "foo", false]
 
 offs.| value
    0 | 0x93
@@ -145,12 +145,12 @@ offs.| value
 Peer
 ====
 
-Each ZMQ peer opens a single ZMQ ROUTER socket and binds it to the indicated in the configuration ip address and port.
+Each ØMQ peer opens a single ØMQ ROUTER socket and binds it to the indicated in the configuration ip address and port.
 
-Each ZMQ peer must have a unique PEER ID (`string`) and an URL of its ROUTER socket.
+Each ØMQ peer must have a unique PEER ID (`string`) and an URL of its ROUTER socket.
 Information about each peer's ID and (external) URL must be available to all other peers in the cluster.
 
-Each ZMQ peer opens as many ZMQ DEALER sockets as there are other peers in the cluster, connected to the other peers' ROUTER sockets.
+Each ØMQ peer opens as many ØMQ DEALER sockets as there are other peers in the cluster, connected to the other peers' ROUTER sockets.
 
 For communication between peers in the RAFT cluster the following RPC messages are being used:
 
@@ -169,7 +169,7 @@ This frame type is `uint`. Its value starts at 1 and increases monotonically for
 Client
 ======
 
-A client should establish a ZMQ DEALER socket and connect it at first to any number of the known cluster peer's ROUTER sockets. Client should then ask each known peer at a time about the cluster state, peer URLs and the current LEADER ID using a RequestConfig RPC. In case the cluster is in transition state (no leader) the client should repeat sending RequestConfig messages until the response contains a valid LEADER ID. Upon success the client should disconnect its DEALER socket from all other peers and connect it only (or leave the connection) to the leader's ROUTER URL. The client should also update its list of all known peers in the cluter.
+A client should establish a ØMQ DEALER socket and connects it at first to all of the known cluster peer's (seed peers) ROUTER sockets. Client should then ask each known peer at a time about the cluster state, peer URLs and the current LEADER ID using a RequestConfig RPC. In case the cluster is in transition state (no leader) the client should repeat sending RequestConfig messages until the response contains a valid LEADER ID. Upon success the client should disconnect its DEALER socket from all other peers and connect it only (or leave the connection) to the leader's ROUTER URL. The client should also update its list of all known peers in the cluter.
 
 The client may ask for the current cluster status and configuration periodically using RequestConfig RPC.
 
@@ -295,6 +295,9 @@ ClientDispatch RPC
 ------------------
 
 This message provides a common signature of any other client RPC messages.
+
+For custom state-machine implementations the message type should consist of at least 2 bytes.
+All single byte message types are reserved for future extension of ØMQ RAFT protocol.
 
 Request frames:
 
@@ -456,7 +459,7 @@ no. |   type | value | description
 RequestBroadcastStateUrl RPC
 ----------------------------
 
-This RPC is only valid when the ZMQ RAFT cluster state machine is a `BroadcastStateMachine`.
+This RPC is only valid when the ØMQ RAFT cluster state machine is a `BroadcastStateMachine`.
 
 ```
 no. |   type | value | description
@@ -473,17 +476,17 @@ no. |   type | value | description
   1 |  reqid |       | unique request id
 
 optional:
-  2 | string |       | a broadcast state ZMQ PUB socket url upon success
+  2 | string |       | a broadcast state ØMQ PUB socket url upon success
 ```
 
 The client, upon missing 2nd frame in the response, should perform a RequestConfig RPC and only when the leader is established should perform this RPC.
-The client, upon receiving ZMQ PUB socket url may connect a ZMQ SUB socket to this url to start receiving StateBroadcast messages.
+The client, upon receiving ØMQ PUB socket url may connect a ØMQ SUB socket to this url to start receiving StateBroadcast messages.
 
 
 StateBroadcast MSG
 ------------------
 
-These messages are being fan out by the `BroadcastStateMachine`'s ZMQ PUB socket.
+These messages are being fan out by the `BroadcastStateMachine`'s ØMQ PUB socket.
 
 ```
 no. |   type | value | description
