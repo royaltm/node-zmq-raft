@@ -11,6 +11,7 @@ Protocol message frames body may be encoded as one of the following type:
 * `bytes` - an array of bytes containing zero or more bytes
 * `string` - an utf-8 encoded string of zero or more bytes (no null termination)
 * `uint` - an unsigned least significant byte first variable length integer (1 - 8 bytes)
+* `uint32` - an unsigned least significant byte first variable length integer (1 - 4 bytes)
 * `bool` - a boolean (true: body must have at least 1 byte and the first byte must not be 0, false: otherwise)
 * `json` - a MessagePack encoded JSON data: http://msgpack.org
 * `entry` - a log entry
@@ -304,7 +305,7 @@ Request frames:
 ```
 no. |   type | value | description
 -----------------------------------------
-  1 |  reqid |       | unique request id
+  1 |  bytes |       | request id (a 12-byte unique reqid or uint32)
   2 |  bytes |       | message type
 ```
 
@@ -313,7 +314,7 @@ Response frames:
 ```
 no. |   type | value | description
 -----------------------------------------
-  1 |  reqid |       | unique request id
+  1 |  bytes |       | request id
 ```
 
 
@@ -325,7 +326,7 @@ Request frames:
 ```
 no. |   type | value | description
 -----------------------------------------
-  1 |  reqid |       | unique request id
+  1 | uint32 |       | request id
   2 |  bytes |  0x5e | message type
 ```
 
@@ -334,7 +335,7 @@ Response frames:
 ```
 no. |   type | value | description
 -----------------------------------------
-  1 |  reqid |       | unique request id
+  1 | uint32 |       | request id
   2 |   bool |       | is the responding peer a leader
   3 |   json |       | LEADER ID as a JSON string or null
 
@@ -369,7 +370,7 @@ no. |   type | value | description
 
 optional:
   3 |   json |       | upon status is true (a success) a committed LOG INDEX as a JSON number
-                     | upon status is false (a  failure) a LEADER ID as a JSON string or null
+                     | upon status is false (a failure) a LEADER ID as a JSON string or null
 ```
 
 If the update status is `true` but there is no 3rd frame in the response it indicates that the update was accepted but the log entry hasn't been committed yet. The response message in this form may be sent several times by the peer and each time it is received by the client it should reset the client's RPC timeout clock.
@@ -389,7 +390,7 @@ Request frames:
 ```
 no. |   type | value | description
 -----------------------------------------
-  1 |  reqid |       | unique request id
+  1 | uint32 |       | request id
   2 |  bytes |  0x3c | message type
   3 |   uint |       | previous LOG INDEX
 
@@ -402,7 +403,7 @@ Response frames:
 ```
 no. |   type | value | description
 -----------------------------------------
-  1 |  reqid |       | unique request id
+  1 | uint32 |       | request id
   2 |   uint |       | status 0: not a leader, 1: this is the last entry, 2: more entries coming, 3: snapshot chunk
   3 |   json |       | in case of status=0 a LEADER ID as a JSON string or null
                      | in case of status=1 or 2 this frame must be ignored
@@ -435,7 +436,7 @@ Request frames:
 ```
 no. |   type | value | description
 -----------------------------------------
-  1 |  reqid |       | unique request id
+  1 | uint32 |       | request id
   2 |  bytes |  0x25 | message type
 ```
 
@@ -444,7 +445,7 @@ Response frames:
 ```
 no. |   type | value | description
 -----------------------------------------
-  1 |  reqid |       | unique request id
+  1 | uint32 |       | request id
   2 |   bool |       | is the responding peer a leader
   3 |   json |       | LEADER ID as a JSON string or null
   4 |   uint |       | peer's current TERM
@@ -464,7 +465,7 @@ This RPC is only valid when the ØMQ RAFT cluster state machine is a `BroadcastS
 ```
 no. |   type | value | description
 -----------------------------------------
-  1 |  reqid |       | unique request id
+  1 | uint32 |       | request id
   2 |  bytes |  0x2a | message type
 ```
 
@@ -473,7 +474,7 @@ Response frames:
 ```
 no. |   type | value | description
 -----------------------------------------
-  1 |  reqid |       | unique request id
+  1 | uint32 |       | request id
 
 optional:
   2 | string |       | a broadcast state ØMQ PUB socket url upon success
