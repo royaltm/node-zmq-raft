@@ -390,7 +390,7 @@ Request frames:
 no. |   type | value | description
 -----------------------------------------
   1 |  reqid |       | unique request id
-  2 |  bytes |  0x3d | message type
+  2 |  bytes |  0x3c | message type
   3 |   uint |       | previous LOG INDEX
 
 optional:
