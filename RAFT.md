@@ -1,7 +1,7 @@
 ZMQ RAFT protocol
 =================
 
-ZMQ RAFT protocol messages follow the ZMQ standard and consist of ZMQ [frames](https://rfc.zeromq.org/spec:15/ZMTP/). http://zguide.zeromq.org/page:all#ZeroMQ-is-Not-a-Neutral-Carrier
+ZMQ RAFT protocol messages follow the ZMQ standard and consist of ZMQ [frames](https://rfc.zeromq.org/spec:23/ZMTP). http://zguide.zeromq.org/page:all#ZeroMQ-is-Not-a-Neutral-Carrier
 
 Data types
 ----------
@@ -33,25 +33,25 @@ The `entry` data is constructed as follows:
 ### Examples:
 
 ```
-zmq frame body as a `string`: "foo"
+zmq frame body as a string: "foo"
 
 offs.| value
    0 | 0x66
    1 | 0x6f
    2 | 0x6f
 
-zmq frame body as an `uint`: 255
+zmq frame body as an uint: 255
 
 offs.| value
    0 | 0xff
 
-zmq frame body as an `uint`: 256
+zmq frame body as an uint: 256
 
 offs.| value
    0 | 0x00
    1 | 0x01
 
-zmq frame body as an `uint`: 9007199254740991
+zmq frame body as an uint: 9007199254740991
 
 offs.| value
    0 | 0xff
@@ -62,23 +62,23 @@ offs.| value
    5 | 0xff
    6 | 0x1f
 
-zmq frame body as a `bool`: False
+zmq frame body as a bool: False
 
 offs.| value
 (empty frame)
 
 
-zmq frame body as a `bool`: True
+zmq frame body as a bool: True
 
 offs.| value
    0 | 0x01
 
-zmq frame body as an `json`: null
+zmq frame body as an json: null
 
 offs.| value
    0 | 0xc0
 
-zmq frame body as an `json`: [42, "foo", false]
+zmq frame body as an json: [42, "foo", false]
 
 offs.| value
    0 | 0x93
@@ -89,7 +89,7 @@ offs.| value
    5 | 0x6f
    6 | 0xc2
 
-zmq frame body as a log `entry`: [5956dc8826f27e10dcccab20, LOG_ENTRY_TYPE_STATE, 42, "foo"]
+zmq frame body as a log entry: [5956dc8826f27e10dcccab20, LOG_ENTRY_TYPE_STATE, 42, "foo"]
 
 offs.| value
    0 | 0x59 - 12 byte request id
@@ -116,7 +116,7 @@ offs.| value
   14 | 0x6f
   15 | 0x6f
 
-zmq frame body as a log `entry`: [0x000000000000000000000000, LOG_ENTRY_TYPE_CHECKPOINT, 43, 0xc0]
+zmq frame body as a log entry: [000000000000000000000000, LOG_ENTRY_TYPE_CHECKPOINT, 43, 0xc0]
 
 offs.| value
    0 | 0x00 - 12 byte request id
@@ -163,17 +163,17 @@ Peer's RPC expects a response to be received within RPC_TIMEOUT (preferred 50 ms
 For some message types: AppendEntries, InstallSnapshot the RPC_TIMEOUT may be longer but not longer than the half of the ELECTION_TIMEOUT_MIN (preferred 200 ms).
 
 The first frame of all the above message types identifies each sent message for debouncing.
-This frame type is `uint` and consists of 1 to 3 bytes. Its value starts at 1 and increases monotonically for each subsequent message until value reaches 16777216 at which it becomes 0.
+This frame type is `uint`. Its value starts at 1 and increases monotonically for each subsequent message until value reaches 16777216 at which it becomes 0.
 
 
 Client
 ======
 
-A client should establish a ZMQ DEALER socket and connect it at first to any number of the known cluster peer's ROUTER sockets. Client should then ask each known peer at a time about the cluster state, peer URLs and the current LEADER ID using a RequestConfig RPC. In case the cluster is in transit state the client should repeat sending RequestConfig messages until the response contains a valid LEADER ID. Upon success the client should disconnect its DEALER socket from all other peers and connect it only (or leave the connection) to the leader's ROUTER URL. The client should also update its list of all known peers in the cluter.
+A client should establish a ZMQ DEALER socket and connect it at first to any number of the known cluster peer's ROUTER sockets. Client should then ask each known peer at a time about the cluster state, peer URLs and the current LEADER ID using a RequestConfig RPC. In case the cluster is in transition state (no leader) the client should repeat sending RequestConfig messages until the response contains a valid LEADER ID. Upon success the client should disconnect its DEALER socket from all other peers and connect it only (or leave the connection) to the leader's ROUTER URL. The client should also update its list of all known peers in the cluter.
 
 The client may ask for the current cluster status and configuration periodically using RequestConfig RPC.
 
-The client should send all following messages to the last known elected leader.
+Once the client knows the current leader it should send all messages to the leader's url.
 
 There are two conditions that may break the known leader state:
 
@@ -185,13 +185,13 @@ In the first scenario the client should connect its DEALER socket to the leader'
 
 In the second scenario the client should connect its DEALER sockets to all known cluster peers, wait a SERVER_ELECTION_GRACE_MS (preferred: 300 ms) interval and send the last request message again to each peer in turn until it receives a positive response or a negative response but with the valid information about the currently elected LEADER ID. Upon that the client should connect its DEALER socket to the current leader's URL and disconnect from all other peers.
 
-For the communication between client and peers the following RPC messages are defined:
+The client may use the following RPC messages for communicating with the cluster peers:
 
 * RequestConfig RPC
 * RequestUpdate RPC
 * RequestEntries RPC
 * RequestLogInfo RPC
-* other, state machine related RPC
+* any other message following ClientDispatch RPC is being forwarded to the state machine
 
 
 RequestVote RPC
@@ -202,7 +202,7 @@ Request frames:
 ```
 no. |   type | value | description
 -----------------------------------------
-  1 |   uint |       | message id (1 to 3 bytes)
+  1 |   uint |       | message id
   2 |  bytes |  0x3f | message type
   3 |  bytes |       | cluster ident
   4 | string |       | candidate's PEER ID
@@ -230,7 +230,7 @@ Request frames:
 ```
 no. |   type | value | description
 -----------------------------------------
-  1 |   uint |       | message id (1 to 3 bytes)
+  1 |   uint |       | message id
   2 |  bytes |  0x2b | message type
   3 |  bytes |       | cluster ident
   4 | string |       | leader's PEER ID
@@ -267,7 +267,7 @@ Request frames:
 ```
 no. |   type | value | description
 -----------------------------------------
-  1 |   uint |       | message id (1 to 3 bytes)
+  1 |   uint |       | message id
   2 |  bytes |  0x24 | message type
   3 |  bytes |       | cluster ident
   4 | string |       | leader's PEER ID
@@ -289,6 +289,28 @@ no. |   type | value | description
 
 optional:
   3 |   uint |       | indicate a byte offset to start sending a next snapshot chunk from
+```
+
+ClientDispatch RPC
+------------------
+
+This message provides a common signature of any other client RPC messages.
+
+Request frames:
+
+```
+no. |   type | value | description
+-----------------------------------------
+  1 |  reqid |       | unique request id
+  2 |  bytes |       | message type
+```
+
+Response frames:
+
+```
+no. |   type | value | description
+-----------------------------------------
+  1 |  reqid |       | unique request id
 ```
 
 
