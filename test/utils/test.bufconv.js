@@ -10,11 +10,23 @@ const { bufconv } = raft.utils;
 
 test('should have functions', t => {
   t.type(bufconv.allocBufUIntLE, 'function');
-  t.strictEquals(bufconv.allocBufUIntLE.length, 1);
+  t.strictEquals(bufconv.allocBufUIntLE.length, 2);
+  t.type(bufconv.allocBufIntLE, 'function');
+  t.strictEquals(bufconv.allocBufIntLE.length, 2);
+  t.type(bufconv.allocBufNumberLE, 'function');
+  t.strictEquals(bufconv.allocBufNumberLE.length, 2);
   t.type(bufconv.writeBufUIntLE, 'function');
   t.strictEquals(bufconv.writeBufUIntLE.length, 3);
+  t.type(bufconv.writeBufIntLE, 'function');
+  t.strictEquals(bufconv.writeBufIntLE.length, 3);
+  t.type(bufconv.writeBufNumberLE, 'function');
+  t.strictEquals(bufconv.writeBufNumberLE.length, 3);
   t.type(bufconv.readBufUIntLE, 'function');
   t.strictEquals(bufconv.readBufUIntLE.length, 3);
+  t.type(bufconv.readBufIntLE, 'function');
+  t.strictEquals(bufconv.readBufIntLE.length, 3);
+  t.type(bufconv.readBufNumberLE, 'function');
+  t.strictEquals(bufconv.readBufNumberLE.length, 3);
   t.end();
 });
 
@@ -28,6 +40,12 @@ test('should have constants', t => {
 
 test('allocBufUIntLE', t => {
   var buf;
+  t.type(buf = bufconv.allocBufUIntLE(), Buffer);
+  t.strictEquals(buf.length, 0);
+  t.type(buf = bufconv.allocBufUIntLE(undefined), Buffer);
+  t.strictEquals(buf.length, 0);
+  t.type(buf = bufconv.allocBufUIntLE(null), Buffer);
+  t.strictEquals(buf.length, 0);
   t.type(buf = bufconv.allocBufUIntLE(0), Buffer);
   t.deepEquals(Array.from(buf), [0]);
   t.type(buf = bufconv.allocBufUIntLE(2), Buffer);
@@ -55,11 +73,26 @@ test('allocBufUIntLE', t => {
   t.type(buf = bufconv.allocBufUIntLE(bufconv.MAX_ALLOWED_INTEGER - 1), Buffer);
   t.deepEquals(Array.from(buf), [254,255,255,255,255,255,31]);
   t.throws(() => bufconv.allocBufUIntLE(bufconv.MAX_ALLOWED_INTEGER + 1), new Error("value is above maximum allowed integer"));
+  t.throws(() => bufconv.allocBufUIntLE(null, true), new TypeError("value is not an unsigned integer"));
+  t.throws(() => bufconv.allocBufUIntLE(undefined, true), new TypeError("value is not an unsigned integer"));
+  t.throws(() => bufconv.allocBufUIntLE('0', true), new TypeError("value is not an unsigned integer"));
+  t.throws(() => bufconv.allocBufUIntLE([], true), new TypeError("value is not an unsigned integer"));
+  t.throws(() => bufconv.allocBufUIntLE(NaN, true), new TypeError("value is not an unsigned integer"));
+  t.throws(() => bufconv.allocBufUIntLE(Number.POSITIVE_INFINITY, true), new TypeError("value is not an unsigned integer"));
+  t.throws(() => bufconv.allocBufUIntLE(-1, true), new TypeError("value is not an unsigned integer"));
+  t.throws(() => bufconv.allocBufUIntLE(10.5, true), new TypeError("value is not an unsigned integer"));
+  t.throws(() => bufconv.allocBufUIntLE(1/3, true), new TypeError("value is not an unsigned integer"));
   t.end();
 });
 
 test('allocBufIntLE', t => {
   var buf;
+  t.type(buf = bufconv.allocBufIntLE(), Buffer);
+  t.strictEquals(buf.length, 0);
+  t.type(buf = bufconv.allocBufIntLE(undefined), Buffer);
+  t.strictEquals(buf.length, 0);
+  t.type(buf = bufconv.allocBufIntLE(null), Buffer);
+  t.strictEquals(buf.length, 0);
   t.type(buf = bufconv.allocBufIntLE(0, buf), Buffer);
   t.deepEquals(Array.from(buf), [0]);
   t.type(buf = bufconv.allocBufIntLE(1, buf), Buffer);
@@ -118,11 +151,27 @@ test('allocBufIntLE', t => {
   t.type(buf = bufconv.allocBufIntLE(bufconv.MIN_ALLOWED_INTEGER + 1, buf), Buffer);
   t.deepEquals(Array.from(buf), [2,0,0,0,0,0,224]);
   t.throws(() => bufconv.allocBufIntLE(bufconv.MIN_ALLOWED_INTEGER - 1, buf), new Error("value is below minimum allowed integer"));
+  t.throws(() => bufconv.allocBufIntLE(null, true), new TypeError("value is not an integer"));
+  t.throws(() => bufconv.allocBufIntLE(undefined, true), new TypeError("value is not an integer"));
+  t.throws(() => bufconv.allocBufIntLE('0', true), new TypeError("value is not an integer"));
+  t.throws(() => bufconv.allocBufIntLE([], true), new TypeError("value is not an integer"));
+  t.throws(() => bufconv.allocBufIntLE(NaN, true), new TypeError("value is not an integer"));
+  t.throws(() => bufconv.allocBufIntLE(Number.POSITIVE_INFINITY, true), new TypeError("value is not an integer"));
+  t.throws(() => bufconv.allocBufIntLE(-10.5, true), new TypeError("value is not an integer"));
+  t.throws(() => bufconv.allocBufIntLE(10.5, true), new TypeError("value is not an integer"));
+  t.throws(() => bufconv.allocBufIntLE(-1/3, true), new TypeError("value is not an integer"));
+  t.throws(() => bufconv.allocBufIntLE(1/3, true), new TypeError("value is not an integer"));
   t.end();
 });
 
 test('allocBufNumberLE', t => {
   var buf;
+  t.type(buf = bufconv.allocBufNumberLE(), Buffer);
+  t.strictEquals(buf.length, 0);
+  t.type(buf = bufconv.allocBufNumberLE(undefined), Buffer);
+  t.strictEquals(buf.length, 0);
+  t.type(buf = bufconv.allocBufNumberLE(null), Buffer);
+  t.strictEquals(buf.length, 0);
   t.type(buf = bufconv.allocBufNumberLE(0), Buffer);
   t.deepEquals(Array.from(buf), [0]);
   t.type(buf = bufconv.allocBufNumberLE(10), Buffer);
@@ -153,6 +202,10 @@ test('allocBufNumberLE', t => {
   t.deepEquals(Array.from(buf), [0,0,0,0,0,0,240,127]);
   t.type(buf = bufconv.allocBufNumberLE(-1/0), Buffer);
   t.deepEquals(Array.from(buf), [0,0,0,0,0,0,240,255]);
+  t.throws(() => bufconv.allocBufNumberLE(null, true), new TypeError("value is not a number"));
+  t.throws(() => bufconv.allocBufNumberLE(undefined, true), new TypeError("value is not a number"));
+  t.throws(() => bufconv.allocBufNumberLE('0', true), new TypeError("value is not a number"));
+  t.throws(() => bufconv.allocBufNumberLE([], true), new TypeError("value is not a number"));
   t.end();
 });
 
@@ -532,5 +585,12 @@ test('random', t => {
     t.strictEquals(buf.length, value % 1 === 0 ? Math.ceil(Math.log2(-value*2)/8) : 8);
     t.strictEquals(bufconv.readBufNumberLE(buf), value);
   }
+  t.end();
+});
+
+test('nulls', t => {
+  t.strictEquals(bufconv.readBufUIntLE(bufconv.allocBufUIntLE(null)), null);
+  t.strictEquals(bufconv.readBufIntLE(bufconv.allocBufIntLE(null)), null);
+  t.strictEquals(bufconv.readBufNumberLE(bufconv.allocBufNumberLE(null)), null);
   t.end();
 });

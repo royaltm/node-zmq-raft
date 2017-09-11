@@ -67,8 +67,8 @@ test('FramesProtocol', suite => {
     t.deepEquals(protocol.encodeResponse([]), []);
     t.deepEquals(protocol.encodeResponse(0), [Buffer.from([0])]);
     t.deepEquals(protocol.encodeResponse([0]), [Buffer.from([0])]);
-    t.deepEquals(protocol.encodeResponse('0'), [Buffer.from([0])]);
-    t.deepEquals(protocol.encodeResponse(['0']), [Buffer.from([0])]);
+    t.throws(() => protocol.encodeResponse('0'), new TypeError('value is not a number'));
+    t.throws(() => protocol.encodeResponse(['0']), new TypeError('value is not a number'));
     var buf = Buffer.from('bar');
     t.deepEquals(protocol.encodeResponse(buf), [Buffer.from('bar')]);
     t.strictEquals(protocol.encodeResponse(buf)[0], buf);
@@ -90,7 +90,7 @@ test('FramesProtocol', suite => {
     t.deepEquals(protocol.decodeResponse([Buffer.from([255,255,255,255,255,255,31])]), [Number.MAX_SAFE_INTEGER]);
     t.deepEquals(protocol.decodeResponse([Buffer.from([1,0,0,0,0,0,0,0])]), [Number.MIN_VALUE]);
     t.deepEquals(protocol.decodeResponse([Buffer.from([24,45,68,84,251,33,9,64])]), [Math.PI]);
-    t.deepEquals(protocol.decodeResponse([Buffer.alloc(0)]), [null]);
+    t.throws(() => protocol.decodeResponse([Buffer.alloc(0)]), new TypeError('decode frames error: number must not be null at frame 1'));
     t.end();
   });
 
@@ -113,8 +113,8 @@ test('FramesProtocol', suite => {
     t.throws(() => protocol.encodeResponse([]), new Error("encode frames error: not enough arguments"));
     t.deepEquals(protocol.encodeResponse(0), [Buffer.from([0])]);
     t.deepEquals(protocol.encodeResponse([0]), [Buffer.from([0])]);
-    t.deepEquals(protocol.encodeResponse('0'), [Buffer.from([0])]);
-    t.deepEquals(protocol.encodeResponse(['0']), [Buffer.from([0])]);
+    t.throws(() => protocol.encodeResponse('0'), new TypeError('value is not a number'));
+    t.throws(() => protocol.encodeResponse(['0']), new TypeError('value is not a number'));
     var buf = Buffer.from('bar');
     t.deepEquals(protocol.encodeResponse(buf), [Buffer.from('bar')]);
     t.strictEquals(protocol.encodeResponse(buf)[0], buf);
@@ -136,7 +136,7 @@ test('FramesProtocol', suite => {
     t.deepEquals(protocol.decodeResponse([Buffer.from([255,255,255,255,255,255,31])]), [Number.MAX_SAFE_INTEGER]);
     t.deepEquals(protocol.decodeResponse([Buffer.from([1,0,0,0,0,0,0,0])]), [Number.MIN_VALUE]);
     t.deepEquals(protocol.decodeResponse([Buffer.from([24,45,68,84,251,33,9,64])]), [Math.PI]);
-    t.deepEquals(protocol.decodeResponse([Buffer.alloc(0)]), [null]);
+    t.throws(() => protocol.decodeResponse([Buffer.alloc(0)]), new TypeError('decode frames error: number must not be null at frame 1'));
     t.end();
   });
 
