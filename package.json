@@ -7,7 +7,7 @@
     "zmq-raft": "./bin/zmq-raft.js"
   },
   "scripts": {
-    "test": "tap test/*/test.*.js"
+    "test": "tap -t 120 test/*/test.*.js"
   },
   "repository": {
     "type": "git",
@@ -33,7 +33,7 @@
     "hjson": "^3.1.0",
     "mkdirp": "^0.5.1",
     "msgpack-lite": "^0.1.26",
-    "zmq": "~2.15.3"
+    "zeromq": "~4.6.0"
   },
   "devDependencies": {
     "ben": "0.0.0",

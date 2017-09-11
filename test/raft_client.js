@@ -6,7 +6,7 @@ const fs = require('fs');
 const path = require('path');
 const dns = require('dns');
 
-const zmq = require('zmq');
+const zmq = require('zeromq');
 const colors = require('colors/safe');
 
 const raft = require('..');

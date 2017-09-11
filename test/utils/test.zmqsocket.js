@@ -1,5 +1,5 @@
 /* 
- *  Copyright (c) 2016 Rafał Michalski <royal@yeondir.com>
+ *  Copyright (c) 2016-2017 Rafał Michalski <royal@yeondir.com>
  *  License: LGPL
  */
 "use strict";
@@ -10,7 +10,7 @@ const raft = require('../..');
 const delay = raft.utils.helpers.delay;
 const { allocBufUIntLE, readBufUIntLE } = raft.utils.bufconv;
 const { ZmqSocket, ZmqDealerSocket } = raft.utils.zmqsocket;
-const zmq = require('zmq');
+const zmq = require('zeromq');
 
 test('should be a function', t => {
   t.type(ZmqSocket, 'function');

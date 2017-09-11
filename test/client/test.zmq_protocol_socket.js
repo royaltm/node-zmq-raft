@@ -9,7 +9,7 @@ const raft = require('../..');
 const ZmqProtocolSocket = raft.client.ZmqProtocolSocket;
 const FramesProtocol = raft.protocol.FramesProtocol;
 const { ZmqSocket } = raft.utils.zmqsocket;
-const { ZMQ_LINGER } = require('zmq');
+const { ZMQ_LINGER } = require('zeromq');
 
 test('should be a function', t => {
   t.type(ZmqProtocolSocket, 'function');

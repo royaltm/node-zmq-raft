@@ -10,7 +10,7 @@ const raft = require('../..');
 const { delay } = raft.utils.helpers;
 const { ZmqRpcSocket, RpcCancelError } = raft.server.ZmqRpcSocket;
 const { ZmqSocket } = raft.utils.zmqsocket;
-const { ZMQ_LINGER } = require('zmq');
+const { ZMQ_LINGER } = require('zeromq');
 
 test('should be a function', t => {
   t.type(ZmqRpcSocket, 'function');
