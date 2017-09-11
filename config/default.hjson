@@ -1,0 +1,23 @@
+raft:
+{
+    id: "local"
+
+    secret: ""
+
+    data: {
+      path: "tmp/local"
+    }
+
+    peers: [
+      {id: "local", url: "tcp://127.0.0.1:8047"}
+    ]
+
+    router: {
+      bind: "tcp://*:8047"
+    }
+
+    broadcast: {
+      url: "tcp://127.0.0.1:8048"
+      bind: "tcp://*:8048"
+    }
+}

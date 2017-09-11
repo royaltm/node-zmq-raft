@@ -1,0 +1,15 @@
+raft:
+{
+    secret: ""
+
+    data: {
+      path: "tmp/raft"
+      appendIdToPath: true
+    }
+
+    peers: [
+      {id: "1", url: "tcp://127.0.0.1:8047", pub: "tcp://127.0.0.1:8048"},
+      {id: "2", url: "tcp://127.0.0.1:8147", pub: "tcp://127.0.0.1:8148"},
+      {id: "3", url: "tcp://127.0.0.1:8247", pub: "tcp://127.0.0.1:8248"}
+    ]
+}

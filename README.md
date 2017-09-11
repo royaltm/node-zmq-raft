@@ -212,7 +212,6 @@ raft.server.build({
   listeners: {
     error: (err) => {
       console.warn(err.stack);
-      raft.close().then(() => process.exit(), () => process.exit());
     },
     state: (state, currentTerm) => {
       console.warn('state: %s term: %s', state, currentTerm);
@@ -220,4 +219,27 @@ raft.server.build({
     close: null /* pass null to prevent initializing default listeners */
   }
 })
+```
+
+
+For testing, to quickly setup a raft server with broadcast state machine use `bin/zmq-raft.js`:
+
+```
+  Usage: zmq-raft [options] [id]
+
+
+  Options:
+
+    -V, --version        output the version number
+    -c, --config <file>  Config file
+    -h, --help           output usage information
+```
+
+e.g.:
+
+```
+export DEBUG=*
+bin/zmq-raft.js -c config/example.hjson 1 &
+bin/zmq-raft.js -c config/example.hjson 2 &
+bin/zmq-raft.js -c config/example.hjson 3 &
 ```
