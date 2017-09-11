@@ -10,8 +10,9 @@ Protocol message frames body may be encoded as one of the following type:
 
 * `bytes` - an array of bytes containing zero or more bytes
 * `string` - an utf-8 encoded string of zero or more bytes (no null termination)
-* `uint` - an unsigned least significant byte first variable length integer (1 - 8 bytes)
-* `uint32` - an unsigned least significant byte first variable length integer (1 - 4 bytes)
+* `uint` - an unsigned least significant byte first variable length integer (1 - 8 bytes), empty frame is interpreted as a protocol error
+* `nuint` - an unsigned least significant byte first variable length integer (1 - 8 bytes), empty frame is interpreted as null
+* `uint32` - an unsigned least significant byte first variable length integer (1 - 4 bytes), empty frame is interpreted as a protocol error
 * `bool` - a boolean (true: body must have at least 1 byte and the first byte must not be 0, false: otherwise)
 * `json` - a MessagePack encoded JSON data: http://msgpack.org
 * `entry` - a log entry
@@ -395,7 +396,9 @@ no. |   type | value | description
   3 |   uint |       | previous LOG INDEX
 
 optional:
-  4 |   uint |       | number of the requested log entries, may be 0 to stop server from sending any further responses in follow up messages
+  4 |  nuint |       | number of the requested log entries, in follow up messages may be 0 to stop server from sending any further responses
+optional:
+  5 |   uint |       | next snapshot byte offset, ignored if previous LOG INDEX is not in the snapshot
 ```
 
 Response frames:
@@ -407,7 +410,7 @@ no. |   type | value | description
   2 |   uint |       | status 0: not a leader, 1: this is the last entry, 2: more entries coming, 3: snapshot chunk
   3 |   json |       | in case of status=0 a LEADER ID as a JSON string or null
                      | in case of status=1 or 2 this frame must be ignored
-                     | in case of status=3 a JSON array containing numbers: [chunk byte offset, snaphost total byte size]
+                     | in case of status=3 a JSON array containing numbers: [chunk byte offset, snaphost total byte size, snapshot term]
 
 optional:
   4 |   uint |       | a LOG INDEX of the last entry/snapshot chunk sent or previous LOG INDEX if there are no entries in the response
@@ -419,11 +422,13 @@ optional:
 
 RequestEntries RPC responses are being sent in a pipeline. The peer will respond with up to REQUEST_ENTRIES_PIPELINES (default: 5) response messages prior to receiving the follow up client request messages.
 
-The client upon receiving a response with status=2 or 3 should send a follow up request message replacing previous LOG INDEX frame with the value of the LOG INDEX from the response message, retaining unique request id frame value of the previous request.
+The client upon receiving a response with status=2 or status=3 with the last snapshot chunk should send a follow up request message replacing previous LOG INDEX frame with the value of the LOG INDEX from the response message, retaining request id frame value of the previous request.
+
+The client upon receiving a response with status=3 and not the last snapshot chunk should send a follow up request message retaining previous LOG INDEX frame and request id frame value of the previous request. The client may optionally add an expected next snapshot byte offset for extra validation.
 
 The client upon receiving response with status=1 should end RPC with a success.
 
-The client upon receiving response with status=0 should follow the broker leader state procedure.
+The client upon receiving response with status=0 should follow the broken leader state procedure.
 
 The client may stop the peer from sending further responses (and clean up the reserved pipeline) by including 4th frame equal to 0 in the follow up request message.
 
