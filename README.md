@@ -96,12 +96,6 @@ When clients miss some entries they have to query zmq-raft for missing entries w
 
 This is implemented in `ZmqRaftSubscriber` class.
 
-Usage
------
-
-TODO: write some docs actually...
-
-
 Hier
 ----
 
@@ -150,3 +144,80 @@ Helper utilities:
 - `raft.utils.id`: unique id utilities
 - `raft.utils.helpers`: various helper functions
 - `raft.utils.fsutil`: various file utils
+
+Usage
+-----
+
+Building raft server requires to assemble component class instances for:
+
+- raft persistence
+- log + snapshot
+- state machine
+- raft server
+
+The simplest way is to use `raft.server.build` function which provides convenient defaults.
+
+This will create a single peer raft server listening on `tcp://127.0.0.1:8047` with data stored in `/tmp/raft` directory:
+
+```js
+const raft = require('zmq-raft');
+raft.server.build({data: {path: '/tmp/raft'}}).then(zmqRaft => {
+  console.log('server alive and ready at: %s', zmqRaft.url);
+});
+```
+
+The following example will create a raft server instance for the first peer in a cluster with BroadcastStateMachine as a state machine:
+```js
+raft.server.build({
+  id: "my1",
+  secret: "",
+  peers: [
+    {id: "my1", url: "tcp://127.0.0.1:8047"},
+    {id: "my2", url: "tcp://127.0.0.1:8147"},
+    {id: "my3", url: "tcp://127.0.0.1:8247"}
+  ],
+  data: {
+    path: "/path/to/raft/data"
+  },
+  router: {
+    /* optional */
+    bind: "tcp://*:8047"
+  },
+  broadcast: {
+    /* required for broadcast state */
+    url: "tcp://127.0.0.1:8048",
+    /* optional */
+    bind: "tcp://*:8048"
+  }
+}).then(zmqRaft => { /* ... */ });
+```
+
+To provide custom state machine override `factory.state` function in `raft.server.build` options:
+
+```js
+raft.server.build({
+  /* ... */
+  factory: {
+    state: (options) => new MyStateMachine(options);
+  }
+})
+```
+
+Provide your own listeners for events on the raft instance instead of the default ones or disable them:
+The listeners are attached early just after `ZmqRaft` is initialized.
+
+```js
+raft.server.build({
+  /* ... */
+  listeners: {
+    error: (err) => {
+      console.warn(err.stack);
+      raft.close().then(() => process.exit(), () => process.exit());
+    },
+    state: (state, currentTerm) => {
+      console.warn('state: %s term: %s', state, currentTerm);
+    },
+    close: null /* pass null to prevent initializing default listeners */
+  }
+})
+```
