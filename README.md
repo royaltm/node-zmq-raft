@@ -126,6 +126,7 @@ Public intermediate common classes for building implementations:
 - `raft.common.IndexFile`
 - `raft.common.ReadyEmitter`
 - `raft.common.FilePersistence`
+- `raft.common.StateMachineWriter`
 - `raft.client.ZmqProtocolSocket`
 - `raft.server.RpcSocket`
 
