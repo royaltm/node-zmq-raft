@@ -85,7 +85,8 @@ test('router', suite => {
   });
 
   suite.test('test flood', t => {
-    t.plan(14*10001+2+11*10000+1);
+    const total = 1000;
+    t.plan(14*(total+1)+2+11*total+1);
     var [router, url] = createZmqSocket('router');
     var socket = createZmqDealerSocket(url);
     socket.connect(url);
@@ -112,13 +113,13 @@ test('router', suite => {
             sentmap.delete(x);
             t.strictEquals(x, reqcount);
             if (reqcount++ === 0) {
-              asyncTimes(10000, (n) => {
+              asyncTimes(total, (n) => {
                 let len = Math.random()*100000>>>0;
                 sentmap.set(++n, len);
                 router.send([src, 'a','kot','ma', allocBufUIntLE(n), crypto.randomBytes(len)])
               });
             }
-            if (reqcount === 10001) resolve();
+            if (reqcount === total + 1) resolve();
           } catch(e) { reject(e); }
         })
       }),
@@ -159,7 +160,7 @@ test('router', suite => {
             t.type(x, 'number');
             queue.push(["ala","ma",Buffer.from("kota"),allocBufUIntLE(x),allocBufUIntLE(frames[4].length),slab]);
             send();
-            if (x === 10000) resolve();
+            if (x === total) resolve();
           } catch(err) { reject(err); }
         });
       })
