@@ -7,6 +7,7 @@
     "zmq-raft": "./bin/zmq-raft.js"
   },
   "scripts": {
+    "cli": "node ./bin/console.js",
     "test": "tap -t 120 test/*/test.*.js"
   },
   "repository": {
