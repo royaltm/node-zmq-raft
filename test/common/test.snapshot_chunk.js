@@ -1,5 +1,5 @@
 /* 
- *  Copyright (c) 2016 Rafał Michalski <royal@yeondir.com>
+ *  Copyright (c) 2016-2017 Rafał Michalski <royal@yeondir.com>
  *  License: LGPL
  */
 "use strict";
@@ -17,7 +17,7 @@ test('should have functions and properties', t => {
 
 test('SnapshotChunk', t => {
   var buf = Buffer.from([0xc0]);
-  var chunk = new SnapshotChunk(buf, 1, 2, 3);
+  var chunk = new SnapshotChunk(buf, 1, 2, 3, 4);
   t.type(chunk, SnapshotChunk);
   t.type(chunk, Buffer);
   t.notStrictEquals(chunk, buf);
@@ -33,6 +33,7 @@ test('SnapshotChunk', t => {
   t.strictEquals(chunk.logIndex, 1);
   t.strictEquals(chunk.snapshotByteOffset, 2);
   t.strictEquals(chunk.snapshotTotalLength, 3);
+  t.strictEquals(chunk.logTerm, 4);
 
   chunk = new SnapshotChunk(buf, 1, 0, 1);
   t.notStrictEquals(chunk, buf);
@@ -46,7 +47,7 @@ test('SnapshotChunk', t => {
 
   t.test('bufferToSnapshotChunk', t => {
     var buf = Buffer.from([0xc0]);
-    var chunk = SnapshotChunk.bufferToSnapshotChunk(buf, 1, 0, 3);
+    var chunk = SnapshotChunk.bufferToSnapshotChunk(buf, 1, 0, 3, 1001);
     t.type(chunk, SnapshotChunk);
     t.type(chunk, Buffer);
     t.strictEquals(chunk, buf);
@@ -59,9 +60,11 @@ test('SnapshotChunk', t => {
     t.strictEquals(chunk.logIndex, 1);
     t.strictEquals(chunk.snapshotByteOffset, 0);
     t.strictEquals(chunk.snapshotTotalLength, 3);
+    t.strictEquals(chunk.logTerm, 1001);
     t.strictEquals(buf.logIndex, 1);
     t.strictEquals(buf.snapshotByteOffset, 0);
     t.strictEquals(buf.snapshotTotalLength, 3);
+    t.strictEquals(buf.logTerm, 1001);
     t.end();
   });
 
