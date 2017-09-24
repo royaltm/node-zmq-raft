@@ -41,7 +41,7 @@ if (myPeer) {
   }
 }
 
-raft.server.build(config.raft)
+raft.server.builder.build(config.raft)
 .then(zmqRaft => {
 
   zmqRaft.on('error', (err) => {

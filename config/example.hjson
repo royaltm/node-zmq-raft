@@ -5,6 +5,11 @@ raft:
     data: {
       path: "tmp/raft"
       appendIdToPath: true
+      # the following is used by bin/zmq-raft.js and bin/logcompact.js
+      compact:
+      {
+        watch: "compact/snap.new"
+      }
     }
 
     peers: [

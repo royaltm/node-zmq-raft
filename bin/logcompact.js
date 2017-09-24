@@ -18,7 +18,7 @@ const package = require('../package.json');
 
 const raft = require('..');
 
-const { server: { FileLog }
+const { server: { FileLog, builder: { createOptions } }
       , common: { SnapshotFile }
       , client: { ZmqRaftClient }
       , utils: { fsutil: { mkdirp }, tempfiles: { createTempName, cleanupTempFiles } }
@@ -32,8 +32,8 @@ program
   .option('-c, --config <file>', 'Config file', defaultConfig)
   .option('-t, --target <file>', 'Target snapshot filename')
   .option('-m, --state-machine <file>', 'State machine')
+  .option('-p, --peer <url>', 'Peer url or id to determine last index from commit index')
   .option('-i, --index <n>', 'Last index', parseInt)
-  .option('-p, --url <url>', 'Peer url to determine last index from commit index')
   .option('-d, --dir <dir>', 'LogFile root path')
   .option('-l, --log <dir>', 'LogFile alternative directory')
   .option('-s, --snapshot <file>', 'LogFile alternative snapshot path')
@@ -43,19 +43,28 @@ program
 
 if (!isFinite(program.zip)) program.zip = Z_BEST_COMPRESSION;
 
-const config = readConfig(program.config);
+const options = readConfig(program.config);
 
-const rootDir = program.dir || config.raft.data;
-const logDir = path.resolve(rootDir, program.log || config.raft.data.log || 'log');
-const snapFile = path.resolve(rootDir, program.snapshot || config.raft.data.snapshot || 'snap');
+const rootDir = program.dir || options.data.path;
+const logDir = path.resolve(rootDir, program.log || options.data.log || 'log');
+const snapFile = path.resolve(rootDir, program.snapshot || options.data.snapshot || 'snap');
 
-const targetFile = program.target || config.raft.compaction.target;
+const targetFile = program.target ||
+                   (options.data.compact.install && path.resolve(rootDir, options.data.compact.install));
+const stateMachinePath = program.stateMachine ||
+                         (options.data.compact.state.path && path.resolve(rootDir, options.data.compact.state.path));
+
 const lastIndex = program.index;
-const peerUrl = program.url;
+const peerUrl = program.peer; // TODO peer id
 
 if (!targetFile) {
   console.error("no target file");
   process.exit(2);
+}
+
+if (!stateMachinePath) {
+  console.error("no state machine specified");
+  process.exit(3);
 }
 
 var lastIndexPromise;
@@ -71,15 +80,15 @@ else if (peerUrl) {
 }
 else {
   console.error("specify last index or peer url");
-  process.exit(3);
+  process.exit(4);
 }
 
-const StateMachineClass = loadState(program.stateMachine || config.raft.compaction.state.path);
+const StateMachineClass = loadState(stateMachinePath);
 
-const stateMachine = new StateMachineClass(Object.assign({
+const stateMachine = new StateMachineClass(Object.assign({}, options.data.compact.state.options, {
   compressionLevel: program.zip,
   unzipSnapshot: program.unzip
-}, config.raft.compaction.state.options));
+}));
 const fileLog = new FileLog(logDir, snapFile, true);
 
 Promise.all([
@@ -133,23 +142,12 @@ function loadState(filename) {
 }
 
 function readConfig(configFile) {
-  if (!configFile) return {};
-  const text = fs.readFileSync(configFile, 'utf8');
-  const config = Hjson.parse(text);
-  if ('object' !== typeof config.raft || config.raft === null) {
-    config.raft = {};
+  var config;
+  if (configFile) {
+    const text = fs.readFileSync(configFile, 'utf8');
+    config = Hjson.parse(text);
   }
-  const raft = config.raft;
-  if ('object' !== typeof raft.data || raft.data === null) {
-    raft.data = {};
-  }
-  if ('object' !== typeof raft.compaction || raft.compaction === null) {
-    raft.compaction = {};
-  }
-  const compaction = raft.compaction;
-  if ('object' !== typeof compaction.state || compaction.state === null) {
-    compaction.state = {};
-  }
-  if (!Array.isArray(raft.peers)) raft.peers = [];
-  return config;
+  else config = {};
+
+  return createOptions(config.raft);
 }

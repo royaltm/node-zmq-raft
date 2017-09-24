@@ -4,19 +4,30 @@ raft:
 
     secret: ""
 
-    data: {
+    data:
+    {
       path: "tmp/local"
+      compact:
+      {
+        state:
+        {
+          path: "../../example/passthrough_state"
+        }
+        watch: true
+      }
     }
 
     peers: [
       {id: "local", url: "tcp://127.0.0.1:8047"}
     ]
 
-    router: {
+    router:
+    {
       bind: "tcp://*:8047"
     }
 
-    broadcast: {
+    broadcast:
+    {
       url: "tcp://127.0.0.1:8048"
       bind: "tcp://*:8048"
     }
