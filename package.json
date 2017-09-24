@@ -4,7 +4,8 @@
   "description": "Opinionated Raft implementation powered by ØMQ",
   "main": "index.js",
   "bin": {
-    "zmq-raft": "./bin/zmq-raft.js"
+    "zmq-raft": "./bin/zmq-raft.js",
+    "zmq-raft-logcompact": "./bin/logcompact.js"
   },
   "scripts": {
     "cli": "node ./bin/console.js",
