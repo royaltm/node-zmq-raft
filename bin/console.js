@@ -472,8 +472,12 @@ function argToBoolean(arg) {
 }
 
 function prompt(repl) {
-  repl.lineParser.reset();
-  repl.bufferedCommand = '';
+  repl.lineParser && repl.lineParser.reset();
+  if (repl.clearBufferedCommand) {
+    repl.clearBufferedCommand();
+  } else {
+    repl.bufferedCommand = '';
+  }
   repl.displayPrompt();
 };
 
