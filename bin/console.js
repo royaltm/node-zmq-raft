@@ -387,14 +387,19 @@ function showInfo(client, id) {
     console.log(yellow('not connected'));
     return Promise.resolve();
   }
-  var urls, anyPeer = false;
+  var cleanUp, anyPeer = false;
   if (client.peers.has(id)) {
-    urls = client.urls;
-    client.setUrls(client.peers.get(id));
+    client = new ZmqRaftClient({peers: [[id, client.peers.get(id)]]});
+    cleanUp = () => client.close();
     anyPeer = true;
   }
+  else if (id) {
+    console.log(yellow('unknown id: %s'), id);
+    return Promise.resolve();
+  }
+  else cleanUp = () => {};
   return client.requestLogInfo(anyPeer, 5000)
-  .then(({isLeader, leaderId, currentTerm, firstIndex, lastApplied, commitIndex, lastIndex, snapshotSize}) => {
+  .then(({isLeader, leaderId, currentTerm, firstIndex, lastApplied, commitIndex, lastIndex, snapshotSize, pruneIndex}) => {
     if (!anyPeer) assert(isLeader);
     console.log(grey(`Log information for: "${isLeader ? green(leaderId) : yellow(id)}"`));
     console.log(`leader:          ${isLeader ? green('yes') : cyan('no')}`);
@@ -404,8 +409,9 @@ function showInfo(client, id) {
     console.log(`commit index:    ${magenta(lpad(commitIndex, 14))}`);
     console.log(`last log index:  ${magenta(lpad(lastIndex, 14))}`);
     console.log(`snapshot size:   ${magenta(lpad(snapshotSize, 14))}`);
-    if (urls) client.setUrls(urls);
-  });
+    console.log(`prune index:     ${magenta(lpad(pruneIndex, 14))}`);
+  })
+  .then(cleanUp, err => { cleanUp(); throw err; });
 }
 
 function floodingNextFactory(enc, flood) {
