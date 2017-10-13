@@ -322,6 +322,8 @@ no. |   type | value | description
 RequestConfig RPC
 -----------------
 
+Request cluster configuration and possible additional metadata about the cluster (in the future).
+
 Request frames:
 
 ```
@@ -459,6 +461,7 @@ no. |   type | value | description
   7 |   uint |       | peer's COMMIT INDEX
   8 |   uint |       | peer's log last INDEX
   9 |   uint |       | peer's snapshot byte size
+ 10 |   uint |       | peer's log latest index that is safe to be pruned
 ```
 
 
