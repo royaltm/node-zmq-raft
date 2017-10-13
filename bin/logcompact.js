@@ -115,9 +115,18 @@ Promise.all([
     var tempSnapshotPromise;
 
     if (!tempSnapshot) {
-      const snapshotData = stateMachine.serialize();
-      tempSnapshot = new SnapshotFile(createTempName(targetFile), lastIndex, lastTerm, snapshotData.length);
-      tempSnapshotPromise = tempSnapshot.ready().then(s => s.write(snapshotData, 0, snapshotData.length));
+      if ('function' === typeof stateMachine.createSnapshotReadStream) {
+        tempSnapshot = new SnapshotFile(createTempName(targetFile), lastIndex, lastTerm, stateMachine.createSnapshotReadStream());
+        tempSnapshotPromise = tempSnapshot.ready();
+      }
+      else if ('function' === typeof stateMachine.serialize) {
+        const snapshotData = stateMachine.serialize();
+        tempSnapshot = new SnapshotFile(createTempName(targetFile), lastIndex, lastTerm, snapshotData.length);
+        tempSnapshotPromise = tempSnapshot.ready().then(s => s.write(snapshotData, 0, snapshotData.length));
+      }
+      else {
+        throw new Error("Could not determine how to create a snapshot data from the provided state machine.");
+      }
     }
     else {
       tempSnapshotPromise = tempSnapshot.ready();
