@@ -22,7 +22,7 @@ test('should have functions and properties', t => {
   t.strictEquals(helpers.lpad.length                   , 3);
   t.type(helpers.matchNothingPattern                   , RegExp);
   t.type(helpers.parsePeers                            , 'function');
-  t.strictEquals(helpers.parsePeers.length             , 1);
+  t.strictEquals(helpers.parsePeers.length             , 2);
   t.type(helpers.regexpEscape                          , 'function');
   t.strictEquals(helpers.regexpEscape.length           , 1);
   t.end();
@@ -128,49 +128,94 @@ test('matchNothingPattern', t => {
   t.end();
 });
 
+test('validatePeerUrlFormat', t => {
+  t.throws(() => helpers.validatePeerUrlFormat(), new Error("peer url must be a non empty string"));
+  t.throws(() => helpers.validatePeerUrlFormat(''), new Error("peer url must be a non empty string"));
+  t.throws(() => helpers.validatePeerUrlFormat('foo'), new Error("peer url protocol must be tcp:"));
+  t.throws(() => helpers.validatePeerUrlFormat('udp:///'), new Error("peer url protocol must be tcp:"));
+  t.throws(() => helpers.validatePeerUrlFormat('http:///'), new Error("peer url protocol must be tcp:"));
+  t.throws(() => helpers.validatePeerUrlFormat('tcp://foo:bar@127.0.0.1'), new Error("peer url must have no auth"));
+  t.throws(() => helpers.validatePeerUrlFormat('tcp://[::]:4087/'), new Error("peer url must have no path"));
+  t.throws(() => helpers.validatePeerUrlFormat('tcp://127.0.0.1/'), new Error("peer url must have no path"));
+  t.throws(() => helpers.validatePeerUrlFormat('tcp://127.0.0.1:4087/'), new Error("peer url must have no path"));
+  t.throws(() => helpers.validatePeerUrlFormat('tcp://127.0.0.1?'), new Error("peer url must have no path"));
+  t.throws(() => helpers.validatePeerUrlFormat('tcp://127.0.0.1:4087?'), new Error("peer url must have no path"));
+  t.throws(() => helpers.validatePeerUrlFormat('tcp://127.0.0.1/?'), new Error("peer url must have no path"));
+  t.throws(() => helpers.validatePeerUrlFormat('tcp://127.0.0.1:4087/?'), new Error("peer url must have no path"));
+  t.throws(() => helpers.validatePeerUrlFormat('tcp://127.0.0.1#'), new Error("peer url must have no hash"));
+  t.throws(() => helpers.validatePeerUrlFormat('tcp://127.0.0.1:1234#'), new Error("peer url must have no hash"));
+  t.throws(() => helpers.validatePeerUrlFormat('tcp://127.0.0.1'), new Error("peer url port must be in range 1-65535"));
+  t.throws(() => helpers.validatePeerUrlFormat('tcp://127.0.0.1:0'), new Error("peer url port must be in range 1-65535"));
+  t.throws(() => helpers.validatePeerUrlFormat('tcp://127.0.0.1:65536'), new Error("peer url port must be in range 1-65535"));
+  t.throws(() => helpers.validatePeerUrlFormat('tcp://127.0.0.1:100000'), new Error("peer url port must be in range 1-65535"));
+  t.throws(() => helpers.validatePeerUrlFormat('tcp://0.0.0.0:4087'), new Error("peer url must not be a placeholder address"));
+  t.throws(() => helpers.validatePeerUrlFormat('tcp://[::]:4087'), new Error("peer url must not be a placeholder address"));
+  t.throws(() => helpers.validatePeerUrlFormat('tcp://foo:4087'), new Error("peer url must have a valid ip address in hostname"));
+  t.throws(() => helpers.validatePeerUrlFormat('tcp://foo.bar:4087'), new Error("peer url must have a valid ip address in hostname"));
+
+  t.type(helpers.validatePeerUrlFormat('tcp://127.0.0.1:4087'), Object);
+  t.strictEquals(helpers.validatePeerUrlFormat('tcp://127.0.0.1:4087').href, 'tcp://127.0.0.1:4087');
+
+  t.end();
+});
+
 test('parsePeers', t => {
   var map;
   t.throws(() => helpers.parsePeers(), TypeError);
   t.throws(() => helpers.parsePeers({}), TypeError);
   t.throws(() => helpers.parsePeers(0), TypeError);
   t.throws(() => helpers.parsePeers(''), TypeError);
-  t.throws(() => helpers.parsePeers(['']), TypeError);
-  t.throws(() => helpers.parsePeers([['']]), TypeError);
-  t.throws(() => helpers.parsePeers([['','x']]), TypeError);
-  t.throws(() => helpers.parsePeers([['x','']]), TypeError);
-  t.throws(() => helpers.parsePeers([{id:''}]), TypeError);
-  t.throws(() => helpers.parsePeers([{url:''}]), TypeError);
-  t.throws(() => helpers.parsePeers([{id: 'foo', url:''}]), TypeError);
+  t.throws(() => helpers.parsePeers(['']), Error);
+  t.throws(() => helpers.parsePeers(['foo']), Error);
+  t.throws(() => helpers.parsePeers([['']]), Error);
+  t.throws(() => helpers.parsePeers([['','x']]), Error);
+  t.throws(() => helpers.parsePeers([['x','']]), Error);
+  t.throws(() => helpers.parsePeers([['x','y']]), Error);
+  t.throws(() => helpers.parsePeers([{id:''}]), Error);
+  t.throws(() => helpers.parsePeers([{url:''}]), Error);
+  t.throws(() => helpers.parsePeers([{id: 'foo', url:''}]), Error);
+  t.throws(() => helpers.parsePeers([{id: 'foo', url:'blah'}]), Error);
+  t.throws(() => helpers.parsePeers(['tcp://127.0.0.1:4087', 'tcp://127.0.0.1:4087']), Error);
+  t.throws(() => helpers.parsePeers([['1', 'tcp://127.0.0.1:4087'], ['2', 'tcp://127.0.0.1:4087']]), Error);
+  t.throws(() => helpers.parsePeers([['1', 'tcp://127.0.0.1:4087'], ['1', 'tcp://127.0.0.1:4187']]), Error);
   t.type(map = helpers.parsePeers([]), Map);
   t.strictEquals(map.size, 0);
+  t.throws(() => helpers.parsePeers([], []), TypeError);
+  t.throws(() => helpers.parsePeers([], {}), TypeError);
 
-  t.type(map = helpers.parsePeers([['foo']]), Map);
+  t.type(map = helpers.parsePeers([['tcp://127.0.0.1:4087']]), Map);
   t.strictEquals(map.size, 1);
-  t.deepEquals(Array.from(map), [['foo', 'foo']]);
+  t.deepEquals(Array.from(map), [['tcp://127.0.0.1:4087', 'tcp://127.0.0.1:4087']]);
 
-  t.type(map = helpers.parsePeers(['foo', 'bar', 'baz']), Map);
+  t.type(map = helpers.parsePeers(['tcp://127.0.0.1:4087', 'tcp://127.0.0.1:4187', 'tcp://127.0.0.1:4287']), Map);
   t.strictEquals(map.size, 3);
-  t.deepEquals(Array.from(map), [['foo', 'foo'], ['bar', 'bar'], ['baz', 'baz']]);
+  t.deepEquals(Array.from(map), [['tcp://127.0.0.1:4087', 'tcp://127.0.0.1:4087'], ['tcp://127.0.0.1:4187', 'tcp://127.0.0.1:4187'], ['tcp://127.0.0.1:4287', 'tcp://127.0.0.1:4287']]);
 
-  t.type(map = helpers.parsePeers([['foo'], ['bar'], ['baz']]), Map);
+  t.type(map = helpers.parsePeers([['tcp://127.0.0.1:4087'], ['tcp://127.0.0.1:4187'], ['tcp://127.0.0.1:4287']]), Map);
   t.strictEquals(map.size, 3);
-  t.deepEquals(Array.from(map), [['foo', 'foo'], ['bar', 'bar'], ['baz', 'baz']]);
+  t.deepEquals(Array.from(map), [['tcp://127.0.0.1:4087', 'tcp://127.0.0.1:4087'], ['tcp://127.0.0.1:4187', 'tcp://127.0.0.1:4187'], ['tcp://127.0.0.1:4287', 'tcp://127.0.0.1:4287']]);
 
-  t.type(map = helpers.parsePeers([{id:'foo'}, {id:'bar'}, {id:'baz'}]), Map);
+  t.type(map = helpers.parsePeers([{id:'tcp://127.0.0.1:4087'}, {id:'tcp://127.0.0.1:4187'}, {id:'tcp://127.0.0.1:4287'}]), Map);
   t.strictEquals(map.size, 3);
-  t.deepEquals(Array.from(map), [['foo', 'foo'], ['bar', 'bar'], ['baz', 'baz']]);
+  t.deepEquals(Array.from(map), [['tcp://127.0.0.1:4087', 'tcp://127.0.0.1:4087'], ['tcp://127.0.0.1:4187', 'tcp://127.0.0.1:4187'], ['tcp://127.0.0.1:4287', 'tcp://127.0.0.1:4287']]);
 
-  t.type(map = helpers.parsePeers([{url:'foo'}, {url:'bar'}, {url:'baz'}]), Map);
+  t.type(map = helpers.parsePeers([{url:'tcp://127.0.0.1:4087'}, {url:'tcp://127.0.0.1:4187'}, {url:'tcp://127.0.0.1:4287'}]), Map);
   t.strictEquals(map.size, 3);
-  t.deepEquals(Array.from(map), [['foo', 'foo'], ['bar', 'bar'], ['baz', 'baz']]);
+  t.deepEquals(Array.from(map), [['tcp://127.0.0.1:4087', 'tcp://127.0.0.1:4087'], ['tcp://127.0.0.1:4187', 'tcp://127.0.0.1:4187'], ['tcp://127.0.0.1:4287', 'tcp://127.0.0.1:4287']]);
 
-  t.type(map = helpers.parsePeers([['01','foo'], ['02', 'bar'], ['03', 'baz']]), Map);
+  t.type(map = helpers.parsePeers([['01','tcp://127.0.0.1:4087'], ['02', 'tcp://127.0.0.1:4187'], ['03', 'tcp://127.0.0.1:4287']]), Map);
   t.strictEquals(map.size, 3);
-  t.deepEquals(Array.from(map), [['01','foo'], ['02', 'bar'], ['03', 'baz']]);
+  t.deepEquals(Array.from(map), [['01','tcp://127.0.0.1:4087'], ['02', 'tcp://127.0.0.1:4187'], ['03', 'tcp://127.0.0.1:4287']]);
 
-  t.type(map = helpers.parsePeers([{id:'01',url:'foo'}, {id:'02', url:'bar'}, {id:'03', url:'baz'}]), Map);
+  t.type(map = helpers.parsePeers([{id:'01',url:'tcp://127.0.0.1:4087'}, {id:'02', url:'tcp://127.0.0.1:4187'}, {id:'03', url:'tcp://127.0.0.1:4287'}]), Map);
   t.strictEquals(map.size, 3);
-  t.deepEquals(Array.from(map), [['01','foo'], ['02', 'bar'], ['03', 'baz']]);
+  t.deepEquals(Array.from(map), [['01','tcp://127.0.0.1:4087'], ['02', 'tcp://127.0.0.1:4187'], ['03', 'tcp://127.0.0.1:4287']]);
+
+  map = new Map([['1', 'tcp://127.0.0.1:4087'], ['2', 'tcp://127.0.0.1:4187']]);
+  t.type(helpers.parsePeers([['1', 'tcp://127.0.0.1:4087']], map), Map);
+  t.type(helpers.parsePeers([['2', 'tcp://127.0.0.1:4187'], ['3', 'tcp://127.0.0.1:4287']], map), Map);
+  t.throws(() => helpers.parsePeers([['1', 'tcp://127.0.0.1:4187']], map), Error);
+  t.throws(() => helpers.parsePeers([['3', 'tcp://127.0.0.1:4087']], map), Error);
   t.end();
 });
 
