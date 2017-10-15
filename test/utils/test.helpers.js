@@ -261,3 +261,46 @@ test('majorityOf', t => {
   t.strictEquals(helpers.majorityOf(10), 6);
   t.end();
 });
+
+test("isMap", function(t) {
+  t.strictEquals(helpers.isMap({}),                              false);
+  t.strictEquals(helpers.isMap([]),                              false);
+  t.strictEquals(helpers.isMap(new Date),                        false);
+  t.strictEquals(helpers.isMap(/regexp/),                        false);
+  t.strictEquals(helpers.isMap(new String('asd')),               false);
+  t.strictEquals(helpers.isMap(new Number(42)),                  false);
+  t.strictEquals(helpers.isMap(new Boolean(false)),              false);
+  t.strictEquals(helpers.isMap(new Map()),                       true);
+  t.strictEquals(helpers.isMap(new Set()),                       false);
+  t.strictEquals(helpers.isMap(Object.create(null)),             false);
+  t.strictEquals(helpers.isMap(Object.create(Array.prototype)),  false);
+  t.strictEquals(helpers.isMap(Object.create(RegExp.prototype)), false);
+  t.strictEquals(helpers.isMap(Object.create(Date.prototype)),   false);
+  t.strictEquals(helpers.isMap(Object.create(RegExp.prototype)), false);
+  t.strictEquals(helpers.isMap(),                                false);
+  t.strictEquals(helpers.isMap(null),                            false);
+  t.strictEquals(helpers.isMap(undefined),                       false);
+  t.strictEquals(helpers.isMap(false),                           false);
+  t.strictEquals(helpers.isMap(true),                            false);
+  t.strictEquals(helpers.isMap(0),                               false);
+  t.strictEquals(helpers.isMap(42),                              false);
+  t.strictEquals(helpers.isMap(''),                              false);
+  t.strictEquals(helpers.isMap('foo'),                           false);
+  t.strictEquals(helpers.isMap(function(){}),                    false);
+  t.strictEquals(helpers.isMap(Symbol("foo")),                   false);
+  t.end();
+});
+
+test('mergeMaps', t => {
+  var map = new Map([[1, 2], [3, 4]]);
+  t.strictEquals(helpers.mergeMaps(map), map);
+  t.strictEquals(map.size, 2);
+  t.deepEquals(Array.from(map), [[1, 2], [3, 4]]);
+  t.strictEquals(helpers.mergeMaps(map, new Map([[3, 4], [5, 6]])), map);
+  t.strictEquals(map.size, 3);
+  t.deepEquals(Array.from(map), [[1, 2], [3, 4], [5, 6]]);
+  t.strictEquals(helpers.mergeMaps(map, new Map([[3, 4], [5, 6]]), new Map([[7, 8], [3, 44]])), map);
+  t.strictEquals(map.size, 4);
+  t.deepEquals(Array.from(map), [[1, 2], [3, 44], [5, 6], [7, 8]]);
+  t.end();
+});
