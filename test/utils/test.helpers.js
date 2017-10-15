@@ -166,6 +166,7 @@ test('parsePeers', t => {
   t.throws(() => helpers.parsePeers(0), TypeError);
   t.throws(() => helpers.parsePeers(''), TypeError);
   t.throws(() => helpers.parsePeers(['']), Error);
+  t.throws(() => helpers.parsePeers([]), new Error("at least one peer must be defined in a cluster"));
   t.throws(() => helpers.parsePeers(['foo']), Error);
   t.throws(() => helpers.parsePeers([['']]), Error);
   t.throws(() => helpers.parsePeers([['','x']]), Error);
@@ -178,8 +179,8 @@ test('parsePeers', t => {
   t.throws(() => helpers.parsePeers(['tcp://127.0.0.1:4087', 'tcp://127.0.0.1:4087']), Error);
   t.throws(() => helpers.parsePeers([['1', 'tcp://127.0.0.1:4087'], ['2', 'tcp://127.0.0.1:4087']]), Error);
   t.throws(() => helpers.parsePeers([['1', 'tcp://127.0.0.1:4087'], ['1', 'tcp://127.0.0.1:4187']]), Error);
-  t.type(map = helpers.parsePeers([]), Map);
-  t.strictEquals(map.size, 0);
+  t.type(map = helpers.parsePeers(['tcp://127.0.0.1:4087']), Map);
+  t.strictEquals(map.size, 1);
   t.throws(() => helpers.parsePeers([], []), TypeError);
   t.throws(() => helpers.parsePeers([], {}), TypeError);
 
