@@ -123,6 +123,7 @@ const raft = require('zmq-raft');
 
 Public intermediate common classes for building implementations:
 
+- `raft.common.ClusterConfiguration`
 - `raft.common.IndexFile`
 - `raft.common.ReadyEmitter`
 - `raft.common.FilePersistence`
