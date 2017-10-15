@@ -23,7 +23,7 @@ test('ClusterConfiguration', suite => {
     t.strictEquals(cc.majority, 1);
     t.strictEquals(cc.ncMajority, 0);
     t.deepEquals(Array.from(cc.peers), []);
-    t.deepEquals(cc.peersAry, [['1', 'tcp://127.0.0.1:8047']]);
+    t.deepEquals(cc.configAry, [['1', 'tcp://127.0.0.1:8047']]);
     t.deepEquals(cc.serialize(), [['1', 'tcp://127.0.0.1:8047']]);
     t.deepEquals(cc.serializeNC(), []);
 
@@ -35,7 +35,7 @@ test('ClusterConfiguration', suite => {
     t.strictEquals(cc.majority, 1);
     t.strictEquals(cc.ncMajority, 2);
     t.deepEquals(Array.from(cc.peers), [['2', 'tcp://127.0.0.1:8147']]);
-    t.deepEquals(cc.peersAry, [['1', 'tcp://127.0.0.1:8047'], ['2', 'tcp://127.0.0.1:8147']]);
+    t.deepEquals(cc.configAry, [['1', 'tcp://127.0.0.1:8047'], ['2', 'tcp://127.0.0.1:8147']]);
     t.deepEquals(cc.serialize(), {old: [['1', 'tcp://127.0.0.1:8047']], new: [['1', 'tcp://127.0.0.1:8047'], ['2', 'tcp://127.0.0.1:8147']]});
     t.deepEquals(cc.serializeNC(), [['1', 'tcp://127.0.0.1:8047'], ['2', 'tcp://127.0.0.1:8147']]);
 
@@ -49,7 +49,7 @@ test('ClusterConfiguration', suite => {
     t.strictEquals(cc.majority, 2);
     t.strictEquals(cc.ncMajority, 0);
     t.deepEquals(Array.from(cc.peers), [['2', 'tcp://127.0.0.1:8147']]);
-    t.deepEquals(cc.peersAry, [['1', 'tcp://127.0.0.1:8047'], ['2', 'tcp://127.0.0.1:8147']]);
+    t.deepEquals(cc.configAry, [['1', 'tcp://127.0.0.1:8047'], ['2', 'tcp://127.0.0.1:8147']]);
     t.deepEquals(cc.serialize(), [['1', 'tcp://127.0.0.1:8047'], ['2', 'tcp://127.0.0.1:8147']]);
     t.deepEquals(cc.serializeNC(), []);
     t.end();
@@ -66,7 +66,7 @@ test('ClusterConfiguration', suite => {
     t.strictEquals(cc.majority, 1);
     t.strictEquals(cc.ncMajority, 2);
     t.deepEquals(Array.from(cc.peers), [['1', 'tcp://127.0.0.1:8047']]);
-    t.deepEquals(cc.peersAry, [['1', 'tcp://127.0.0.1:8047'], ['2', 'tcp://127.0.0.1:8147']]);
+    t.deepEquals(cc.configAry, [['1', 'tcp://127.0.0.1:8047'], ['2', 'tcp://127.0.0.1:8147']]);
     t.deepEquals(cc.serialize(), {old: [['1', 'tcp://127.0.0.1:8047']], new: [['1', 'tcp://127.0.0.1:8047'], ['2', 'tcp://127.0.0.1:8147']]});
     t.deepEquals(cc.serializeNC(), [['1', 'tcp://127.0.0.1:8047'], ['2', 'tcp://127.0.0.1:8147']]);
 
@@ -80,7 +80,7 @@ test('ClusterConfiguration', suite => {
     t.strictEquals(cc.majority, 2);
     t.strictEquals(cc.ncMajority, 0);
     t.deepEquals(Array.from(cc.peers), [['1', 'tcp://127.0.0.1:8047']]);
-    t.deepEquals(cc.peersAry, [['1', 'tcp://127.0.0.1:8047'], ['2', 'tcp://127.0.0.1:8147']]);
+    t.deepEquals(cc.configAry, [['1', 'tcp://127.0.0.1:8047'], ['2', 'tcp://127.0.0.1:8147']]);
     t.deepEquals(cc.serialize(), [['1', 'tcp://127.0.0.1:8047'], ['2', 'tcp://127.0.0.1:8147']]);
     t.deepEquals(cc.serializeNC(), []);
 
@@ -94,7 +94,7 @@ test('ClusterConfiguration', suite => {
     t.strictEquals(cc.majority, 2);
     t.strictEquals(cc.ncMajority, 1);
     t.deepEquals(Array.from(cc.peers), [['1', 'tcp://127.0.0.1:8047']]);
-    t.deepEquals(cc.peersAry, [['1', 'tcp://127.0.0.1:8047'], ['2', 'tcp://127.0.0.1:8147']]);
+    t.deepEquals(cc.configAry, [['1', 'tcp://127.0.0.1:8047'], ['2', 'tcp://127.0.0.1:8147']]);
     t.deepEquals(cc.serialize(), {old: [['1', 'tcp://127.0.0.1:8047'], ['2', 'tcp://127.0.0.1:8147']], new: [['1', 'tcp://127.0.0.1:8047']]});
     t.deepEquals(cc.serializeNC(), [['1', 'tcp://127.0.0.1:8047']]);
 
@@ -106,7 +106,7 @@ test('ClusterConfiguration', suite => {
     t.strictEquals(cc.majority, 1);
     t.strictEquals(cc.ncMajority, 0);
     t.deepEquals(Array.from(cc.peers), [['1', 'tcp://127.0.0.1:8047']]);
-    t.deepEquals(cc.peersAry, [['1', 'tcp://127.0.0.1:8047']]);
+    t.deepEquals(cc.configAry, [['1', 'tcp://127.0.0.1:8047']]);
     t.deepEquals(cc.serialize(), [['1', 'tcp://127.0.0.1:8047']]);
     t.deepEquals(cc.serializeNC(), []);
 
