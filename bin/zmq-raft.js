@@ -82,7 +82,7 @@ raft.server.builder.build(config.raft)
     zmqRaft = undefined;
   }
 
-  console.log('server listening at: %s', zmqRaft.url);
+  console.log('server listening at: %s', zmqRaft.url || zmqRaft.routerBindUrl);
 })
 .catch(err => {
   console.error("RAFT INIT ERROR");
