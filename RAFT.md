@@ -6,6 +6,7 @@ Implementation details
 1. Raft peers only accept voteRequest, appendEntries and installSnapshot from the known peers in the configuration.
 2. During network partitions candidates don't timeout for the next election term unless they receive responses for their own voteRequest messages from at least majority of the peers in the cluster.
 3. During network partitions candidates ignore higher term candidates' votes unless they receive responses for their own voteRequest messages from at least majority of the peers in the cluster.
+4. State machine can store permanently last applied index and on startup ØMQ Raft will assign its commit index to the state machine's last applied index. ØMQ Raft while in follower state will refuse to truncate its log below commit index and will panic.
 
 Additions:
 
