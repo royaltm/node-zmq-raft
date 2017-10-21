@@ -81,7 +81,7 @@ createRepl().then(repl => {
     action: function(hosts) {
       lookup(hosts.split(/\s+/)).then(urls => {
         client && client.close();
-        client = new ZmqRaftClient(urls);
+        client = new ZmqRaftClient(urls, {heartbeat: 5000});
         repl.context.client = client;
         console.log('connecting to: %s', urls.join(', '));
       })
