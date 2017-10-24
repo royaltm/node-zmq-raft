@@ -16,7 +16,7 @@ test('should be a function', t => {
   t.end();
 });
 
-test('router', suite => {
+test('ZmqProtocolSocket', suite => {
   var [router, url] = createZmqSocket('router');
 
   suite.test('test requests', t => {
@@ -202,13 +202,115 @@ test('router', suite => {
         ]);
       })
       .then(() => {
-        socket.close();
+        socket.destroy();
         router.removeListener('frames', listener);
         router.unbindSync(url);
         router.close();
       })
       .then(() => t.ok(true))
     ]).catch(t.threw);
+  });
+
+  suite.test('waitForQueues', t => {
+    t.plan(3+8*7+36);
+    var [router, url] = createZmqSocket('router');
+    router.unbindSync(url);
+    var socket = new ZmqProtocolSocket(url, {highwatermark: 1});
+    t.strictEquals(socket.getsockopt('ZMQ_SNDHWM'), 1);
+    t.strictEquals(socket.pendingRequests, 0);
+    t.strictEquals(socket.pendingQueues, 0);
+    var promise = Promise.all([
+      new Promise((resolve, reject) => {
+        var count = 8;
+        router.on('frames', (frames) => {
+          try {
+            let [src, id, msg] = frames;
+            t.type(src, Buffer);
+            t.type(id, Buffer);
+            t.strictEquals(id.length, 1);
+            t.type(msg, Buffer);
+            t.notStrictEquals(src.length, 0);
+            t.notStrictEquals(id.length, 0);
+            t.matches(msg.toString(), /^(foo|bar|baz|trigger|reply[1-4])$/);
+            if (msg.toString() === 'baz') {
+              router.send([src, id, 'more']);
+            }
+            else if (!msg.toString().startsWith('reply')) {
+              router.send([src, id, "foo", "bar", "baz"]);
+            }
+            if (--count === 0) resolve();
+          } catch(e) { reject(e); }
+        })
+      }),
+      socket.request("foo").then(res => {
+        t.type(res, Array);
+        t.strictEquals(res.length, 3);
+        t.type(res[0], Buffer);
+        t.type(res[1], Buffer);
+        t.type(res[2], Buffer);
+        t.strictEquals(res[0].toString(), "foo");
+        t.strictEquals(res[1].toString(), "bar");
+        t.strictEquals(res[2].toString(), "baz");
+      }),
+      socket.request("bar").then(res => {
+        t.type(res, Array);
+        t.strictEquals(res.length, 3);
+        t.type(res[0], Buffer);
+        t.type(res[1], Buffer);
+        t.type(res[2], Buffer);
+        t.strictEquals(res[0].toString(), "foo");
+        t.strictEquals(res[1].toString(), "bar");
+        t.strictEquals(res[2].toString(), "baz");
+      }),
+      socket.request("baz", {onresponse: (res, reply, refresh) => {
+        if (res[0].toString() === 'more') {
+          reply('reply1');
+          reply('trigger');
+          refresh();
+        }
+        else {
+          socket.setsockopt('ZMQ_SNDHWM', 2);
+          reply('reply2');
+          reply('reply3');
+          reply('reply4');
+          return res;
+        }
+      }}).then(res => {
+        t.type(res, Array);
+        t.strictEquals(res.length, 3);
+        t.type(res[0], Buffer);
+        t.type(res[1], Buffer);
+        t.type(res[2], Buffer);
+        t.strictEquals(res[0].toString(), "foo");
+        t.strictEquals(res[1].toString(), "bar");
+        t.strictEquals(res[2].toString(), "baz");
+        t.strictEquals(socket.pendingRequests, 0);
+        t.strictEquals(socket.pendingQueues, 1);
+        return socket.waitForQueues(1000).then(() => {
+          t.strictEquals(socket.pendingQueues, 0);
+        })
+      }),
+      socket.waitForQueues(1000).then(() => {
+        t.notStrictEquals(socket.pendingRequests, 0);
+        t.strictEquals(socket.pendingQueues, 0);
+      }),
+      socket.waitForQueues(1).catch(err => {
+        t.type(err, ZmqProtocolSocket.TimeoutError);
+        t.strictEquals(err.isTimeout, true);
+        router.bindSync(url);
+      })
+    ])
+    .then(() => {
+      t.strictEquals(socket.pendingRequests, 0);
+      t.strictEquals(socket.pendingQueues, 0);
+      router.close();
+      socket.destroy();
+      t.ok(true);
+    })
+
+    t.strictEquals(socket.pendingRequests, 3);
+    t.strictEquals(socket.pendingQueues, 2);
+    return promise.catch(t.threw);
   });
 
   suite.end();
