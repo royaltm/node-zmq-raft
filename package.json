@@ -5,7 +5,8 @@
   "main": "index.js",
   "bin": {
     "zmq-raft": "./bin/zmq-raft.js",
-    "zr-log-compact": "./bin/zr-log-compact.js"
+    "zr-log-compact": "./bin/zr-log-compact.js",
+    "zr-log-tool": "./bin/zr-tool.js"
   },
   "scripts": {
     "cli": "node ./bin/console.js",
