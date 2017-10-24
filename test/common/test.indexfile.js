@@ -13,7 +13,14 @@ const raft = require('../..');
 const { IndexFile } = raft.common;
 
 const tempDir = fs.mkdtempSync(path.join(__dirname, '..', '..', 'tmp', 'idxfile.'));
-// process.on('exit', () => fs.rmdirSync(tempDir));
+
+process.on('exit', () => {
+  (function rmdeep(dir) {
+    fs.readdirSync(dir).forEach(item => rmdeep(path.join(dir, item)));
+    fs.rmdirSync(dir);
+  })(tempDir);
+});
+
 
 test('IndexFile', suite => {
 
@@ -106,7 +113,8 @@ test('IndexFile', suite => {
   });
 
   suite.test('should open existing index file and flood it', t => {
-    t.plan(9 + 6 + 100 * 6 + 3 + 2 + (IndexFile.DEFAULT_CAPACITY - 1) * (2 + 2) + 5 + 7);
+    t.plan(9 + 6 + 100 * 6 + 3 + 2 + (IndexFile.DEFAULT_CAPACITY - 1) * 4
+          + (IndexFile.DEFAULT_CAPACITY - 1) * 2 + 6 + 7);
     var filename = path.join(tempDir, '00000', '00', '00', '00000000000001.rlog');
     var entries = [];
     return new IndexFile(filename).ready()
@@ -166,35 +174,54 @@ test('IndexFile', suite => {
           t.ok(readv[index].equals(entry));
         });
 
-        return new Promise((resolve, reject) => {
-          var input = [];
-          var extractor = indexFile.createEntryExtractor(input, indexFile.firstAllowedIndex, indexFile.lastAllowedIndex)
-          indexFile.createLogReadStream(indexFile.firstAllowedIndex, indexFile.lastAllowedIndex, 65536)
-          .on('error', reject)
-          .on('end', () => {
-            try {
-              t.ok(extractor.next().done)
-              t.strictEquals(input.length, 0);
-              t.strictEquals(entries.length, 0);
-              resolve();
-            } catch(err) { reject(err); }
-          })
-          .on('data', data => {
-            try {
-              input.push(data);
-              for(;;) {
-                let {value, done} = extractor.next();
-                if (done) {
-                  t.strictEquals(input.length, 0);
-                  t.strictEquals(entries.length, 0);
+        return Promise.all([
+          new Promise((resolve, reject) => {
+            var input = [], index = 0;
+            var extractor = indexFile.createEntryExtractor(input, indexFile.firstAllowedIndex, indexFile.lastAllowedIndex)
+            indexFile.createLogReadStream(indexFile.firstAllowedIndex, indexFile.lastAllowedIndex, 65536)
+            .on('error', reject)
+            .on('end', () => {
+              try {
+                t.ok(extractor.next().done)
+                t.strictEquals(input.length, 0);
+                t.strictEquals(entries.length, index);
+                resolve();
+              } catch(err) { reject(err); }
+            })
+            .on('data', data => {
+              try {
+                input.push(data);
+                for(;;) {
+                  let {value, done} = extractor.next();
+                  if (done) {
+                    t.strictEquals(input.length, 0);
+                    t.strictEquals(entries.length, index);
+                  }
+                  if (value === undefined) break;
+                  t.type(value, Buffer);
+                  t.ok(value.equals(entries[index++]));
                 }
-                if (value === undefined) break;
-                t.type(value, Buffer);
-                t.ok(value.equals(entries.shift()));
-              }
-            } catch(err) { reject(err); }
-          });
-        });
+              } catch(err) { reject(err); }
+            });
+          }),
+          new Promise((resolve, reject) => {
+            var index = 0;
+            indexFile.createLogEntryReadStream(indexFile.firstAllowedIndex, indexFile.lastAllowedIndex, 32768)
+            .on('error', reject)
+            .on('end', () => {
+              try {
+                t.strictEquals(entries.length, index);
+                resolve();
+              } catch(err) { reject(err); }
+            })
+            .on('data', data => {
+              try {
+                t.type(data, Buffer);
+                t.ok(data.equals(entries[index++]));
+              } catch(err) { reject(err); }
+            });
+          })
+        ]);
       })
       .then(() => indexFile.truncate(1))
       .then(() => {
@@ -209,7 +236,7 @@ test('IndexFile', suite => {
       .then(() => {
         t.ok(!fs.existsSync(filename));
       });
-  })
+    })
     .catch(t.threw);
   });
 
