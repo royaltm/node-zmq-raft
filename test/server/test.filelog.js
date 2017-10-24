@@ -202,12 +202,15 @@ test('FileLog', suite => {
         });
 
         var snapnew = path.join(tempDir, 'compact', 'snap.new');
-        log.createTmpSnapshot(TOTAL_ENTRIES, 1111, 0).ready()
-        .then(snapshot => snapshot.replace(snapnew).then(() => snapshot.close()))
-        return log.watchInstallSnapshot(snapnew)
-        .then(() => new Promise((resolve, reject) => {
-          log.on('error', reject).once('snapshot', resolve);
-        }));
+
+        return Promise.all([
+          log.watchInstallSnapshot(snapnew)
+             .then(() => new Promise((resolve, reject) => {
+                log.on('error', reject).once('snapshot', resolve);
+             })),
+          log.createTmpSnapshot(TOTAL_ENTRIES, 1111, 0).ready()
+             .then(snapshot => snapshot.replace(snapnew).then(() => snapshot.close()))
+        ]);
       });
     })
     .then(() => {
