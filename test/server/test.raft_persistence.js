@@ -9,7 +9,6 @@ const path = require('path');
 const fs = require('fs');
 const raft = require('../..');
 const { RaftPersistence } = raft.server;
-const { unlink } = raft.utils.fsutil;
 
 var workdir = fs.mkdtempSync(path.resolve(__dirname, '..', '..', 'tmp') + path.sep);
 
