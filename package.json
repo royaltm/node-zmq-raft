@@ -10,7 +10,7 @@
   },
   "scripts": {
     "cli": "node ./bin/console.js",
-    "test": "tap -t 120 test/*/test.*.js"
+    "test": "tap -t 300 test/*/test.*.js"
   },
   "repository": {
     "type": "git",
