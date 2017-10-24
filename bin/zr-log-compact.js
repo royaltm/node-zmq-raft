@@ -2,7 +2,9 @@
 /* 
  *  Copyright (c) 2016-2017 Rafał Michalski <royal@yeondir.com>
  */
- if (require.main !== module) throw new Error("logcompact.js must be run directly from node");
+"use strict";
+
+if (require.main !== module) throw new Error("zr-log-compact.js must be run directly from node");
 
 const path = require('path')
     , fs = require('fs')
@@ -12,7 +14,7 @@ const { Z_BEST_COMPRESSION } = require('zlib');
 
 const program = require('commander')
     , Hjson = require('hjson')
-    , debug = require('debug')('zmq-raft:logcompact');
+    , debug = require('debug')('zmq-raft:log-compact');
 
 const package = require('../package.json');
 
