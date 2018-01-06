@@ -11,14 +11,14 @@ const program = require('commander')
     , Hjson = require('hjson')
     , debug = require('debug')('zmq-raft');
 
-const package = require('../package.json');
+const pkg = require('../package.json');
 
 const raft = require('..');
 
 const defaultConfig = path.join(__dirname, '..', 'config', 'default.hjson');
 
 program
-  .version(package.version)
+  .version(pkg.version)
   .usage('[options] [id]')
   .option('-c, --config <file>', 'Config file', defaultConfig)
   .parse(process.argv);

@@ -16,7 +16,7 @@ const program = require('commander')
     , Hjson = require('hjson')
     , debug = require('debug')('zmq-raft:log-compact');
 
-const package = require('../package.json');
+const pkg = require('../package.json');
 
 const raft = require('..');
 
@@ -29,7 +29,7 @@ const { server: { FileLog, builder: { createOptions } }
 const defaultConfig = path.join(__dirname, '..', 'config', 'default.hjson');
 
 program
-  .version(package.version)
+  .version(pkg.version)
   .usage('[options]')
   .option('-c, --config <file>', 'Config file', defaultConfig)
   .option('-t, --target <file>', 'Target snapshot filename')
