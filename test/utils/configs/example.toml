@@ -1,0 +1,10 @@
+id = "root-toml"
+secret = "baz-toml"
+
+[raft]
+id = "example-toml"
+secret = "foo-toml"
+
+[other.cfg]
+id = "other-toml"
+secret = "bar-toml"

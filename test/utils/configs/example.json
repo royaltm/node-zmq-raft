@@ -1,0 +1,14 @@
+{
+  "id": "root-json",
+  "secret": "baz-json",
+  "raft": {
+    "id": "example-json",
+    "secret": "foo-json"
+  },
+  "other": {
+    "cfg": {
+      "id": "other-json",
+      "secret": "bar-json"
+    }
+  }
+}

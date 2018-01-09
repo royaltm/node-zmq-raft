@@ -1,0 +1,11 @@
+id: root-yaml
+secret: baz-yaml
+
+raft:
+  id: example-yaml
+  secret: foo-yaml
+
+other:
+  cfg:
+    id: other-yaml
+    secret: bar-yaml

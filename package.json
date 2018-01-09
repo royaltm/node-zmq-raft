@@ -34,8 +34,10 @@
   "dependencies": {
     "commander": "^2.12.2",
     "hjson": "^3.1.0",
+    "js-yaml": "^3.10.0",
     "mkdirp": "^0.5.1",
     "msgpack-lite": "^0.1.26",
+    "toml": "^2.3.3",
     "zeromq": "~4.6.0"
   },
   "devDependencies": {

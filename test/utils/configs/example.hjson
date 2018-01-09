@@ -1,0 +1,17 @@
+id: root-hjson
+secret: baz-hjson
+
+raft:
+{
+  id: example-hjson
+  secret: foo-hjson
+}
+
+other:
+{
+  cfg:
+  {
+    id: other-hjson
+    secret: bar-hjson
+  }
+}
