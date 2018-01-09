@@ -7,20 +7,20 @@
 if (require.main !== module) throw new Error("zr-log-compact.js must be run directly from node");
 
 const path = require('path')
-    , fs = require('fs')
     , assert = require('assert');
 
 const { Z_NO_COMPRESSION, Z_BEST_COMPRESSION } = require('zlib');
 
 const program = require('commander')
-    , Hjson = require('hjson')
     , debug = require('debug')('zmq-raft:log-compact');
 
 const pkg = require('../package.json');
 
 const raft = require('..');
 
-const { server: { FileLog, builder: { createOptions } }
+const { readConfig } = require('../lib/utils/config');
+
+const { server: { FileLog }
       , common: { SnapshotFile }
       , client: { ZmqRaftClient }
       , utils: { fsutil: { mkdirp }
@@ -31,68 +31,32 @@ const { server: { FileLog, builder: { createOptions } }
 program
   .version(pkg.version)
   .usage('[options]')
-  .option('-c, --config <file>', 'Config file in hjson format')
+  .description('create compact snapshot of zmq-raft log files with a state machine')
+  .option('-c, --config <file>', 'Config file')
   .option('-t, --target <file>', 'Target snapshot filename')
-  .option('-m, --state-machine <file>', 'State machine')
-  .option('-p, --peer <url>', 'Peer url or id to determine last index from commit index')
+  .option('-m, --state-machine <file>', 'State machine path')
   .option('-i, --index <n>', 'Last index', parseInt)
+  .option('-p, --peer <url>', 'Peer url to determine last index from commit index')
+  .option('-k, --cluster <secret>', 'Secret cluster identity part of the protocol')
   .option('-d, --dir <dir>', 'LogFile root path')
   .option('-l, --log <dir>', 'LogFile alternative directory')
   .option('-s, --snapshot <file>', 'LogFile alternative snapshot path')
   .option('-z, --zip <level>', 'State machine compressionLevel option', parseInt)
   .option('-U, --no-unzip', 'State machine unzipSnapshot option')
+  .option('--ns [namespace]', 'Raft config root namespace [raft]', 'raft')
   .parse(process.argv);
 
-function mergeSmOptions(options) {
-  var smOptions = Object.assign({compressionLevel: Z_BEST_COMPRESSION}, options);
-
-  /* force zip */
-  if (program.zip !== undefined) {
-    smOptions.compressionLevel = program.zip;
-  }
-
-  if ('number' !== typeof smOptions.compressionLevel
-      || isNaN(smOptions.compressionLevel)
-      || smOptions.compressionLevel < 0
-      || smOptions.compressionLevel > Z_BEST_COMPRESSION) {
-    throw new TypeError('zip level must be an integer from 0 to ' + Z_BEST_COMPRESSION);
-  }
-
-  if (program.unzip === false) {
-    /* force no-unzip */
-    smOptions.unzipSnapshot = false;
-  }
-  else if (smOptions.unzipSnapshot === undefined
-          && options.compressionLevel !== Z_NO_COMPRESSION) {
-    /* set unzip if not set on original options
-       and original zip level wasn't no-compression */
-    smOptions.unzipSnapshot = true;
-  }
-
-  return smOptions;
-}
-
-function findPeerUrl(options) {
-  var peers = parsePeers(options.peers);
-  if ('string' === typeof options.id) {
-    return peers.get(options.id);
-  }
-}
-
 function exitError(status) {
-  args = [].slice.call(arguments, 1);
+  var args = [].slice.call(arguments, 1);
   console.error.apply(console, args);
   process.exit(status);
 }
 
-function start() {
-
-  const options = readConfig(program.config);
-
-  const rootDir = program.dir || options.data.path;
+readConfig(program.config, program.ns).then(config => {
+  const rootDir = program.dir || config.data.path;
 
   if ('string' !== typeof rootDir) {
-    throw new TypeError('data directory must be defined!');
+    exitError(8, 'data directory must be defined!');
   }
 
   debug('data directory: %s', rootDir);
@@ -100,13 +64,15 @@ function start() {
   const configDir = program.config ? path.dirname(path.resolve(program.config))
                                    : rootDir;
 
-  const logDir = path.resolve(rootDir, program.log || options.data.log || 'log');
-  const snapFile = path.resolve(rootDir, program.snapshot || options.data.snapshot || 'snap');
+  const logDir = path.resolve(rootDir, program.log || config.data.log || 'log');
+  const snapFile = path.resolve(rootDir, program.snapshot || config.data.snapshot || 'snap');
 
   const targetFile = program.target ||
-                     (options.data.compact.install && path.resolve(rootDir, options.data.compact.install));
+                     (config.data.compact.install && path.resolve(rootDir, config.data.compact.install));
   const stateMachinePath = program.stateMachine ||
-                           (options.data.compact.state.path && path.resolve(configDir, options.data.compact.state.path));
+                           (config.data.compact.state.path && path.resolve(configDir, config.data.compact.state.path));
+
+  const secret = program.cluster === undefined ? config.secret : program.cluster;
 
   if (!targetFile) {
     exitError(2, "no target file");
@@ -119,15 +85,15 @@ function start() {
   }
 
   var lastIndexPromise;
-  if (isFinite(program.index) && program.index > 0) {
+  if (isFinite(program.index) && program.index >= 0) {
     lastIndexPromise = Promise.resolve(program.index);
   }
   else {
-    const peerUrl = program.peer || findPeerUrl(options);
+    const peerUrl = program.peer || findPeerUrl(config);
     if (!peerUrl) {
       exitError(4, "specify last index or peer url");
     }
-    const client = new ZmqRaftClient({peers: [peerUrl]});
+    const client = new ZmqRaftClient({secret, peers: [peerUrl]});
     lastIndexPromise = client.requestLogInfo(true, 5000).then(({commitIndex, pruneIndex}) => {
       client.close();
       return Math.min(commitIndex, pruneIndex);
@@ -136,7 +102,7 @@ function start() {
 
   const StateMachineClass = loadState(stateMachinePath);
 
-  const stateMachine = new StateMachineClass(mergeSmOptions(options.data.compact.state.options));
+  const stateMachine = new StateMachineClass(mergeSmOptions(config.data.compact.state.options));
   const fileLog = new FileLog(logDir, snapFile, true);
 
   return Promise.all([
@@ -148,7 +114,7 @@ function start() {
   .then(([fileLog, stateMachine, lastIndex, lastTerm]) => {
     var tempSnapshot;
 
-    if (lastTerm === undefined) throw new Error("last index not found in the file log");
+    if (lastTerm === undefined) exitError(5, `last index: ${lastIndex} not found in the file log`);
 
     if (stateMachine.snapshotReadStream) {
       tempSnapshot = new SnapshotFile(createTempName(targetFile), lastIndex, lastTerm, stateMachine.snapshotReadStream);
@@ -173,7 +139,7 @@ function start() {
           tempSnapshotPromise = tempSnapshot.ready().then(s => s.write(snapshotData, 0, snapshotData.length));
         }
         else {
-          throw new Error("Could not determine how to create a snapshot data from the provided state machine.");
+          exitError(6, "Could not determine how to create a snapshot data from the provided state machine.");
         }
       }
       else {
@@ -186,28 +152,51 @@ function start() {
     .then(() => tempSnapshot.close());
   })
   .then(() => debug('compaction done'));
-}
-
-Promise.resolve().then(start).catch(err => {
+})
+.catch(err => {
   console.error("LOG COMPACTION ERROR");
   console.error(err.stack);
   process.exit(1);
 });
 
+function mergeSmOptions(options) {
+  var smOptions = Object.assign({compressionLevel: Z_BEST_COMPRESSION}, options);
+
+  /* force zip */
+  if (program.zip !== undefined) {
+    smOptions.compressionLevel = program.zip;
+  }
+
+  if ('number' !== typeof smOptions.compressionLevel
+      || isNaN(smOptions.compressionLevel)
+      || smOptions.compressionLevel < 0
+      || smOptions.compressionLevel > Z_BEST_COMPRESSION) {
+    exitError(7, "zip level must be an integer from 0 to " + Z_BEST_COMPRESSION);
+  }
+
+  if (program.unzip === false) {
+    /* force no-unzip */
+    smOptions.unzipSnapshot = false;
+  }
+  else if (smOptions.unzipSnapshot === undefined
+          && options.compressionLevel !== Z_NO_COMPRESSION) {
+    /* set unzip if not set on original options
+       and original zip level wasn't no-compression */
+    smOptions.unzipSnapshot = true;
+  }
+
+  return smOptions;
+}
+
+function findPeerUrl(options) {
+  var peers = parsePeers(options.peers);
+  if ('string' === typeof options.id) {
+    return peers.get(options.id);
+  }
+}
+
 function loadState(filename) {
   filename = path.resolve(filename);
   debug('StateMachineClass: %j', filename);
   return require(filename);
-}
-
-function readConfig(configFile) {
-  var config;
-  if (configFile) {
-    debug('reading config: %s', configFile);
-    const text = fs.readFileSync(configFile, 'utf8');
-    config = Hjson.parse(text);
-  }
-  else config = {};
-
-  return createOptions(config.raft);
 }

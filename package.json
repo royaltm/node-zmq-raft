@@ -6,7 +6,8 @@
   "bin": {
     "zmq-raft": "./bin/zmq-raft.js",
     "zr-log-compact": "./bin/zr-log-compact.js",
-    "zr-log-tool": "./bin/zr-tool.js"
+    "zr-log-tool": "./bin/zr-tool.js",
+    "zr-config": "./bin/zr-config.js"
   },
   "scripts": {
     "cli": "node ./bin/console.js",
