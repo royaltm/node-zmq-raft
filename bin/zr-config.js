@@ -7,7 +7,6 @@
 if (require.main !== module) throw new Error("zr-config.js must be run directly from node");
 
 const url = require('url')
-    , { isIP } = require('net')
     , assert = require('assert');
 
 const program = require('commander');
