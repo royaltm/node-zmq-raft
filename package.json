@@ -33,7 +33,7 @@
   },
   "homepage": "https://github.com/royaltm/node-zmq-raft#readme",
   "dependencies": {
-    "commander": "^2.12.2",
+    "commander": "^2.13.0",
     "hjson": "^3.1.0",
     "js-yaml": "^3.10.0",
     "mkdirp": "^0.5.1",
