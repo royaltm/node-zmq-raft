@@ -41,7 +41,7 @@ test('FileLog', suite => {
   var log, reqestKey0, reqestKey1, logentries, digest;
 
   suite.test('should create FileLog', t => {
-    t.plan(77);
+    t.plan(80);
     log = new FileLog(path.join(tempDir, 'log'), path.join(tempDir, 'snap'));
     t.type(log, FileLog);
     return log.ready()
@@ -157,6 +157,25 @@ test('FileLog', suite => {
       });
     })
     .then(() => {
+      var start = Date.now()
+      return Promise.all([
+        start,
+        log.appendState(genIdent("buffer"), 44, crypto.randomBytes(1)).then(logIndex => [logIndex, Date.now()]),
+        log.appendState(genIdent("buffer"), 44, crypto.randomBytes(100000)).then(logIndex => [logIndex, Date.now()]),
+        log.appendState(genIdent("buffer"), 44, crypto.randomBytes(100000)).then(logIndex => [logIndex, Date.now()]),
+        log.appendState(genIdent("buffer"), 44, crypto.randomBytes(100000)).then(logIndex => [logIndex, Date.now()]),
+        log.appendState(genIdent("buffer"), 44, crypto.randomBytes(100000)).then(logIndex => [logIndex, Date.now()])
+      ]);
+    })
+    .then(result => {
+      var indexes = result.slice(1);
+      t.deepEquals(indexes.map(([logIndex]) => logIndex), [4,5,6,7,8]);
+      var start = result[0];
+      var deltas = indexes.map(([_,ts]) => { var delta = ts - start; start = ts; return delta; });
+      var sum = deltas.slice(1).reduce((sum, delta) => sum+delta);
+      t.ok(deltas[0] > 0, 'first append should be few ms later');
+      t.ok(sum < deltas[0], 'the rest should be relatively small comparing to first append');
+
       return log.close();
     }).catch(err => {
       log.close();
@@ -173,8 +192,8 @@ test('FileLog', suite => {
       t.strictEquals(filelog, log);
       t.strictEquals(log.logdir, path.join(tempDir, 'log'));
       t.strictEquals(log.firstIndex, 1);
-      t.strictEquals(log.lastIndex, 3);
-      t.strictEquals(log.lastTerm, 43);
+      t.strictEquals(log.lastIndex, 8);
+      t.strictEquals(log.lastTerm, 44);
       t.strictEquals(log.snapshot.logIndex, 0);
       t.strictEquals(log.snapshot.logTerm, 0);
       t.strictEquals(log.snapshot.dataSize, 0);
