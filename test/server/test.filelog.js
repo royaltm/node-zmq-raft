@@ -41,7 +41,7 @@ test('FileLog', suite => {
   var log, reqestKey0, reqestKey1, logentries, digest;
 
   suite.test('should create FileLog', t => {
-    t.plan(80);
+    t.plan(85);
     log = new FileLog(path.join(tempDir, 'log'), path.join(tempDir, 'snap'));
     t.type(log, FileLog);
     return log.ready()
@@ -58,6 +58,15 @@ test('FileLog', suite => {
     })
     .then(files => {
       t.deepEquals(files, [path.join(tempDir, 'log', '00000', '00', '00', '00000000000001.rlog')]);
+      return log.findIndexFilePathOf(0);
+    })
+    .then(filepath => {
+      t.strictEquals(filepath, undefined);
+      return log.findIndexFilePathOf(1);
+    })
+    .then(filepath => {
+      t.strictEquals(filepath, undefined);
+
       return log.appendCheckpoint(42);
     })
     .then(index => {
@@ -66,6 +75,16 @@ test('FileLog', suite => {
       t.strictEquals(log.lastIndex, 1);
       t.strictEquals(log.lastTerm, 42);
       t.strictEquals(log.getFirstFreshIndex(), undefined);
+
+      return log.findIndexFilePathOf(1);
+    })
+    .then(filepath => {
+      t.strictEquals(filepath, path.join(tempDir, 'log', '00000', '00', '00', '00000000000001.rlog'));
+      return log.findIndexFilePathOf(2);
+    })
+    .then(filepath => {
+      t.strictEquals(filepath, undefined);
+
       reqestKey0 = genIdent('base64');
       return log.appendState(reqestKey0, 43, Buffer.from('foo'));
     })
@@ -76,6 +95,12 @@ test('FileLog', suite => {
       t.strictEquals(log.lastTerm, 43);
       t.strictEquals(log.getFirstFreshIndex(), 2);
       t.strictEquals(log.getRid(reqestKey0), 2);
+
+      return log.findIndexFilePathOf(2);
+    })
+    .then(filepath => {
+      t.strictEquals(filepath, path.join(tempDir, 'log', '00000', '00', '00', '00000000000001.rlog'));
+
       reqestKey1 = genIdent('base64');
       return log.appendConfig(reqestKey1, 43, Buffer.from('bar'));
     })
@@ -184,7 +209,7 @@ test('FileLog', suite => {
   });
 
   suite.test('should open FileLog', t => {
-    t.plan(18 + TOTAL_ENTRIES*4 + 10);
+    t.plan(18 + TOTAL_ENTRIES*4 + 11);
     log = new FileLog(path.join(tempDir, 'log'), path.join(tempDir, 'snap'));
     t.type(log, FileLog);
     return log.ready()
@@ -246,6 +271,10 @@ test('FileLog', suite => {
     .then(files => {
       t.strictEquals(files.length, 1);
       t.strictEquals(files[0], path.join(tempDir, 'log', '00000', '00', '00', '00000000000001.rlog'));
+      return log.findIndexFilePathOf(TOTAL_ENTRIES);
+    })
+    .then(filepath => {
+      t.strictEquals(filepath, path.join(tempDir, 'log', '00000', '00', '00', '00000000000001.rlog'));
 
       return log.close();
     }).catch(err => {
@@ -255,7 +284,7 @@ test('FileLog', suite => {
   });
 
   suite.test('should replace FileLog', t => {
-    t.plan(10 + 64 + 21);
+    t.plan(10 + 67 + 70 + 7 + 18);
     log = new FileLog(path.join(tempDir, 'log'), path.join(tempDir, 'snap'));
     t.type(log, FileLog);
     return log.ready()
@@ -300,6 +329,54 @@ test('FileLog', suite => {
                         i.toString(16).substr(1) + '.rlog'));
       }
       t.strictEquals(files[65], path.join(tempDir, 'log', '00002', '00', '01', '00002000100000.rlog'));
+
+      return FileLog.readIndexFileNames(log.logdir, (filepath) => {
+        t.strictEquals(filepath, path.join(tempDir, 'log', '00001', 'ff', 'ff', '00001fffffff02.rlog'));
+      })
+      .then(result => {
+        t.strictEquals(result, false);
+        var n = 0;
+        return FileLog.readIndexFileNames(log.logdir, (filepath) => {
+          t.strictEquals(filepath, files[n++]);
+          return true;
+        })
+        .then(result => {
+          t.strictEquals(result, true);
+          return n;
+        });
+      });
+    })
+    .then(n => {
+      t.strictEquals(n, 66);
+
+      return log.findIndexFilePathOf(1);
+    })
+    .catch(err => {
+      t.strictEquals(err.code, 'ENOENT');
+      return log.findIndexFilePathOf(0x00001fffffff01);
+    })
+    .then(filepath => {
+      t.strictEquals(filepath, undefined);
+      return log.findIndexFilePathOf(0x00001fffffff02);
+    })
+    .then(filepath => {
+      t.strictEquals(filepath, path.join(tempDir, 'log', '00001', 'ff', 'ff', '00001fffffff02.rlog'));
+      return log.findIndexFilePathOf(0x00001fffffffff);
+    })
+    .then(filepath => {
+      t.strictEquals(filepath, path.join(tempDir, 'log', '00001', 'ff', 'ff', '00001fffffff02.rlog'));
+      return log.findIndexFilePathOf(0x00002000000000);
+    })
+    .then(filepath => {
+      t.strictEquals(filepath, path.join(tempDir, 'log', '00002', '00', '00', '00002000000000.rlog'));
+      return log.findIndexFilePathOf(0x000020000fffff);
+    })
+    .then(filepath => {
+      t.strictEquals(filepath, path.join(tempDir, 'log', '00002', '00', '00', '0000' + (0x2000100000-DEFAULT_CAPACITY).toString(16) + '.rlog'));
+      return log.findIndexFilePathOf(0x00002000100000);
+    })
+    .then(filepath => {
+      t.strictEquals(filepath, path.join(tempDir, 'log', '00002', '00', '01', '00002000100000.rlog'));
 
       t.strictEquals(log.firstIndex, 0x1fffffff02);
       t.strictEquals(log.lastIndex, 0x2000100000);
