@@ -43,7 +43,8 @@ program
   .option('-s, --snapshot <file>', 'LogFile alternative snapshot path')
   .option('-z, --zip <level>', 'State machine compressionLevel option', parseInt)
   .option('-U, --no-unzip', 'State machine unzipSnapshot option')
-  .option('--ns [namespace]', 'Raft config root namespace [raft]', 'raft')
+  .option('-N, --no-prune', 'Skip printing of log files to be pruned')
+  .option('--ns [namespace]', 'Raft config root namespace', 'raft')
   .parse(process.argv);
 
 function exitError(status) {
@@ -149,7 +150,11 @@ readConfig(program.config, program.ns).then(config => {
     })
     .then(() => tempSnapshot.replace(targetFile))
     .then(() => cleanupTempFiles(targetFile, debug))
-    .then(() => tempSnapshot.close());
+    .then(() => tempSnapshot.close())
+    .then(() => {
+      if (program.prune) return listPruneFiles(fileLog, lastIndex);
+    })
+    .then(() => fileLog.close());
   })
   .then(() => debug('compaction done'));
 })
@@ -199,4 +204,18 @@ function loadState(filename) {
   filename = path.resolve(filename);
   debug('StateMachineClass: %j', filename);
   return require(filename);
+}
+
+function listPruneFiles(fileLog, lastIndex) {
+  return fileLog.findIndexFilePathOf(lastIndex)
+  .then(lastPath => {
+    if (!lastPath) return;
+    var lastName = path.basename(lastPath);
+    return FileLog.readIndexFileNames(fileLog.logdir, (filePath) => {
+      if (path.basename(filePath) < lastName) {
+        process.stdout.write(filePath + "\n");
+        return true;
+      }
+    });
+  });
 }
