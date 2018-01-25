@@ -304,3 +304,36 @@ test('mergeMaps', t => {
   t.deepEquals(Array.from(map), [[1, 2], [3, 44], [5, 6], [7, 8]]);
   t.end();
 });
+
+test('createOptionsFactory', t => {
+  const defaultOpts = {foo: {bar: {baz: 42}}};
+  var createOptions = helpers.createOptionsFactory(defaultOpts);
+  var options = createOptions();
+  t.deepEquals(options, defaultOpts);
+  t.notStrictEquals(options, defaultOpts);
+  t.notStrictEquals(options.foo, defaultOpts.foo);
+  t.notStrictEquals(options.foo.bar, defaultOpts.foo.bar);
+  t.deepEquals(createOptions({foo: {}}), defaultOpts);
+  t.deepEquals(createOptions({foo: 1}), defaultOpts);
+  t.deepEquals(createOptions({foo: {bar: {}}}), defaultOpts);
+  t.deepEquals(createOptions({foo: {bar: ''}}), defaultOpts);
+  options = {xxx: 123, foo: {bar: {baz: -1}}};
+  t.notStrictEquals(createOptions(options), options);
+  t.notStrictEquals(createOptions(options).foo, options.foo);
+  t.notStrictEquals(createOptions(options).foo.bar, options.foo.bar);
+  t.deepEquals(createOptions(options), {xxx: 123, foo: {bar: {baz: -1}}});
+  t.deepEquals(options, {xxx: 123, foo: {bar: {baz: -1}}});
+  t.end();
+});
+
+test('validateIntegerOption', t => {
+  var options = {foo: '1', bar: '-1'};
+  t.strictEquals(helpers.validateIntegerOption(options, 'foo', 1, 1), 1);
+  t.strictEquals(helpers.validateIntegerOption(options, 'bar', -1, 0), -1);
+  t.strictEquals(helpers.validateIntegerOption({foo: 42}, 'foo', 0, 100), 42);
+  t.throws(() => helpers.validateIntegerOption({}, 'foo'), new TypeError("options.foo must be an integer value"));
+  t.throws(() => helpers.validateIntegerOption({foo: 'foo'}, 'foo'), new TypeError("options.foo must be an integer value"));
+  t.throws(() => helpers.validateIntegerOption({foo: '100'}, 'foo', 101), new TypeError("options.foo must be >= 101"));
+  t.throws(() => helpers.validateIntegerOption({foo: '100'}, 'foo', null, 99), new TypeError("options.foo must be <= 99"));
+  t.end();
+});
