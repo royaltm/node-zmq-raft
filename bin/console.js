@@ -3,7 +3,7 @@
 /*
  * BIN console
  *
- * Author: Rafal Michalski (c) 2017
+ * Author: Rafal Michalski (c) 2017-2018
  */
 
 const assert = require('assert');
