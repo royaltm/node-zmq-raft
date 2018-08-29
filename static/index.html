@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/event-source-polyfill/0.0.9/eventsource.min.js"  crossorigin="anonymous"></script>
+    <title>ZMQ RAFT Monitor</title>
+  </head>
+  <body>
+    <div class="container-fluid">
+      <div class="row">
+        <div class="col-sm">
+          <h1>ZMQ RAFT Monitor</h1>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-sm">
+          <table class="table table-striped">
+            <thead class="thead-dark">
+              <tr>
+                <th scope="col">#</th>
+                <th scope="col">Raft State</th>
+                <th scope="col">ØMQ Url</th>
+                <th scope="col">Term</th>
+                <th scope="col">Commit</th>
+                <th scope="col">Applied</th>
+                <th scope="col">First</th>
+                <th scope="col">Last</th>
+                <th scope="col">Snaphost Index</th>
+                <th scope="col">Snaphost Term</th>
+                <th scope="col">Snaphost Size</th>
+                <th scope="col">Time</th>
+              </tr>
+            </thead>
+            <tbody id="clusterbody">
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <template id="noderow">
+        <tr class="nodeinfo">
+          <td class="peer-id"></td>
+          <td class="peer-state"></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+        </tr>
+      </template>
+    </div>
+<!--     <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+ --> 
+  <script>
+    fetch('/status').then(response => response.json()).then(status => {
+      const port = status.port
+          , peers = status.peers
+          , noderow = document.getElementById('noderow');
+      for(let [id, url] of peers) {
+        let tbody = document.getElementById("clusterbody");
+        let nclone = document.importNode(noderow.content, true);
+        let tr = nclone.querySelector("tr");
+        let trClassName = tr.className;
+        let td = nclone.querySelectorAll("td");
+        td[0].textContent = id;
+        td[1].textContent = 'Unknown';
+        td[2].textContent = url;
+        tbody.appendChild(nclone);
+
+        let ipaddr = url.match(/tcp:\/\/(.+):\d+/)[1];
+
+        const evtSource = new EventSource('//' + ipaddr + ':' + port + '/monitor');
+        evtSource.onmessage = function(e) {
+          let raft = JSON.parse(e.data);
+          td[1].textContent = raft.state;
+          switch(raft.state.toLowerCase()) {
+            case 'leader':
+              tr.className = trClassName + ' bg-primary'; break;
+            case 'follower':
+              tr.className = trClassName + ' bg-success'; break;
+            case 'candidate':
+              tr.className = trClassName + ' bg-warning'; break;
+            case 'client':
+              tr.className = trClassName + ' bg-info'; break;
+          }
+          td[3].textContent = raft.currentTerm;
+          td[4].textContent = raft.commitIndex;
+          td[5].textContent = raft.lastApplied;
+          td[6].textContent = raft.firstIndex;
+          td[7].textContent = raft.lastIndex;
+          td[8].textContent = raft.snapshot.logIndex;
+          td[9].textContent = raft.snapshot.logTerm;
+          td[10].textContent = raft.snapshot.dataSize;
+          td[11].textContent = new Date().toLocaleString();
+        };
+        evtSource.onerror = function(e) {
+          tr.className = trClassName + ' bg-danger';
+          td[1].textContent = 'Disconnected';
+        };
+      }
+    }).catch(err => alert(err));
+  </script>
+  </body>
+</html>

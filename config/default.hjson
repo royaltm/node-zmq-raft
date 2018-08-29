@@ -31,4 +31,9 @@ raft:
       url: "tcp://127.0.0.1:8048"
       bind: "tcp://*:8048"
     }
+
+    webmonitor:
+    {
+      enable: true
+    }
 }
