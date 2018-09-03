@@ -79,12 +79,20 @@ createRepl().then(repl => {
       showInfo(getClient(), id).then(() => prompt(repl)).catch(error);
     }
   });
+  repl.defineCommand('secret', {
+    help: "Set cluster's secret part of the protocol before connecting",
+    action: function(secret) {
+      if (secret) repl.context.secret = secret;
+      else console.log('Current secret: %j', repl.context.secret);
+      prompt(repl);
+    }
+  });
   repl.defineCommand('connect', {
-    help: 'Connect client to zmq-raft servers: host [host...]',
+    help: 'Connect client to zmq-raft servers: host[:port] [host...]',
     action: function(hosts) {
       lookup(hosts.split(/\s+/)).then(urls => {
         client && client.close();
-        client = new ZmqRaftClient(urls, {heartbeat: 5000});
+        client = new ZmqRaftClient(urls, {heartbeat: 5000, secret: repl.context.secret});
         repl.context.client = client;
         console.log('connecting to: %s', urls.join(', '));
       })
@@ -97,7 +105,7 @@ createRepl().then(repl => {
       lookup(hosts.split(/\s+/)).then(urls => {
         subs && subs.close();
         client && client.close();
-        subs = new ZmqRaftSubscriber(urls);
+        subs = new ZmqRaftSubscriber(urls, {secret: repl.context.secret});
         repl.context.client = subs.client;
         repl.context.subs = subs;
         console.log('connecting to: %s', urls.join(', '));
@@ -355,6 +363,7 @@ createRepl().then(repl => {
     , ben
     , pkg
     , lookup
+    , secret: ""
     , entries: {decode: buf => buf.length, logIndex: 0, decompress: true}
     , genId: genIdent
     , flood: {iteration: 0, flooding: false, data: crypto.randomBytes(6).toString('base64')}
