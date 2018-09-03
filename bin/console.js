@@ -129,7 +129,7 @@ createRepl().then(repl => {
     }
   });
   repl.defineCommand('close', {
-    help: 'Subscribe to zmq-raft broadcast state servers: host[:port] [host...]',
+    help: 'Close current connection or subscription',
     action: function(hosts) {
       subs && subs.close();
       client && client.close();
