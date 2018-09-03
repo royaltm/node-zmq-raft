@@ -1,3 +1,4 @@
+<!-- https://dribbble.com/shots/3376812-Abstract-Activity-Indicator -->
 <!doctype html>
 <html lang="en">
   <head>
@@ -6,6 +7,50 @@
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/event-source-polyfill/0.0.9/eventsource.min.js"  crossorigin="anonymous"></script>
     <title>ØMQ RAFT Monitor</title>
+    <style type="text/css">
+      .indicator {
+        position: relative;
+        top: 50%;
+        left: 50%;
+        transform: scale(2);
+      }
+      .indicator svg polyline {
+        fill: none;
+        stroke-width: 2;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        stroke: none;
+        stroke-dasharray: 12, 36;
+        stroke-dashoffset: 12;
+        animation: dash 1s linear infinite;
+      }
+      .flat .indicator svg polyline.flat {
+        stroke: #3bd3ab;
+      }
+      .ping .indicator svg polyline.ping {
+        stroke: #3bd3ab;
+      }
+      @-moz-keyframes dash {
+        to {
+          stroke-dashoffset: -36;
+        }
+      }
+      @-webkit-keyframes dash {
+        to {
+          stroke-dashoffset: -36;
+        }
+      }
+      @-o-keyframes dash {
+        to {
+          stroke-dashoffset: -36;
+        }
+      }
+      @keyframes dash {
+        to {
+          stroke-dashoffset: -36;
+        }
+      }
+    </style>
   </head>
   <body>
     <div class="container-fluid">
@@ -19,18 +64,19 @@
           <table class="table table-striped">
             <thead class="thead-dark">
               <tr>
-                <th scope="col">#</th>
+                <th scope="col" class="text-right">#</th>
+                <th scope="col">Peer Id</th>
                 <th scope="col">Raft State</th>
+                <th scope="col">❤️Beat</th>
                 <th scope="col">ØMQ Url</th>
-                <th scope="col">Term</th>
-                <th scope="col">Commit</th>
-                <th scope="col">Applied</th>
-                <th scope="col">First</th>
-                <th scope="col">Last</th>
-                <th scope="col">Snapshot Index</th>
-                <th scope="col">Snapshot Term</th>
-                <th scope="col">Snapshot Size</th>
-                <th scope="col">Time</th>
+                <th scope="col" class="text-right">Term</th>
+                <th scope="col" class="text-right">Commit</th>
+                <th scope="col" class="text-right">Applied</th>
+                <th scope="col" class="text-right">First</th>
+                <th scope="col" class="text-right">Last</th>
+                <th scope="col" class="text-right">Snap. Index</th>
+                <th scope="col" class="text-right">Snap. Term</th>
+                <th scope="col" class="text-right">Snap. Size</th>
               </tr>
             </thead>
             <tbody id="clusterbody">
@@ -40,18 +86,19 @@
       </div>
       <template id="noderow">
         <tr class="nodeinfo">
+          <th scope="row" class="text-right"></th>
           <td class="peer-id"></td>
           <td class="peer-state"></td>
-          <td></td>
-          <td></td>
-          <td></td>
-          <td></td>
-          <td></td>
-          <td></td>
-          <td></td>
-          <td></td>
-          <td></td>
-          <td></td>
+          <td><div class="indicator"><svg width="16px" height="12px"><polyline class="flat" points="1 6 15 6"></polyline><polyline class="ping" points="1 6 4 6 6 1 10 11 12 6 15 6"></polyline></svg></div></td>
+          <td class="peer-url"></td>
+          <td class="text-right"></td>
+          <td class="text-right"></td>
+          <td class="text-right"></td>
+          <td class="text-right"></td>
+          <td class="text-right"></td>
+          <td class="text-right"></td>
+          <td class="text-right"></td>
+          <td class="text-right"></td>
         </tr>
       </template>
     </div>
@@ -59,54 +106,65 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
  --> 
-  <script>
-    fetch('/status').then(response => response.json()).then(status => {
-      const port = status.port
-          , peers = status.peers
-          , noderow = document.getElementById('noderow');
-      for(let [id, url] of peers) {
-        let tbody = document.getElementById("clusterbody");
-        let nclone = document.importNode(noderow.content, true);
-        let tr = nclone.querySelector("tr");
-        let trClassName = tr.className;
-        let td = nclone.querySelectorAll("td");
-        td[0].textContent = id;
-        td[1].textContent = 'Unknown';
-        td[2].textContent = url;
-        tbody.appendChild(nclone);
+    <script>
+      fetch('/status').then(response => response.json()).then(status => {
+        const port = status.port
+            , peers = status.peers
+            , noderow = document.getElementById('noderow');
+        for(let [index, [id, url]] of peers.entries()) {
+          let tbody = document.getElementById("clusterbody");
+          let nclone = document.importNode(noderow.content, true);
+          let tr = nclone.querySelector("tr");
+          let trClassName = tr.className;
+          let td = nclone.querySelectorAll("td");
+          nclone.querySelector("th").textContent = index + 1;
+          td[0].textContent = id;
+          td[1].textContent = 'Unknown';
+          td[3].textContent = url;
+          tbody.appendChild(nclone);
 
-        let ipaddr = url.match(/tcp:\/\/(.+):\d+/)[1];
-
-        const evtSource = new EventSource('//' + ipaddr + ':' + port + '/monitor');
-        evtSource.onmessage = function(e) {
-          let raft = JSON.parse(e.data);
-          td[1].textContent = raft.state;
-          switch(raft.state.toLowerCase()) {
-            case 'leader':
-              tr.className = trClassName + ' bg-primary'; break;
-            case 'follower':
-              tr.className = trClassName + ' bg-success'; break;
-            case 'candidate':
-              tr.className = trClassName + ' bg-warning'; break;
-            case 'client':
-              tr.className = trClassName + ' bg-info'; break;
-          }
-          td[3].textContent = raft.currentTerm;
-          td[4].textContent = raft.commitIndex;
-          td[5].textContent = raft.lastApplied;
-          td[6].textContent = raft.firstIndex;
-          td[7].textContent = raft.lastIndex;
-          td[8].textContent = raft.snapshot.logIndex;
-          td[9].textContent = raft.snapshot.logTerm;
-          td[10].textContent = raft.snapshot.dataSize;
-          td[11].textContent = new Date().toLocaleString();
-        };
-        evtSource.onerror = function(e) {
-          tr.className = trClassName + ' bg-danger';
-          td[1].textContent = 'Disconnected';
-        };
-      }
-    }).catch(err => alert(err));
-  </script>
+          let ipaddr = url.match(/tcp:\/\/(.+):\d+/)[1];
+          const evtSource = new EventSource('//' + ipaddr + ':' + port + '/monitor');
+          evtSource.onopen = function(e) {
+            td[2].className = 'flat';
+          };
+          let heartbeatflat;
+          evtSource.onmessage = function(e) {
+            let raft = JSON.parse(e.data);
+            td[1].textContent = raft.state;
+            td[2].className = 'ping';
+            switch(raft.state.toLowerCase()) {
+              case 'leader':
+                tr.className = trClassName + ' bg-primary'; break;
+              case 'follower':
+                tr.className = trClassName + ' bg-success'; break;
+              case 'candidate':
+                tr.className = trClassName + ' bg-warning'; break;
+              case 'client':
+                tr.className = trClassName + ' bg-info'; break;
+            }
+            td[4].textContent = raft.currentTerm;
+            td[5].textContent = raft.commitIndex;
+            td[6].textContent = raft.lastApplied;
+            td[7].textContent = raft.firstIndex;
+            td[8].textContent = raft.lastIndex;
+            td[9].textContent = raft.snapshot.logIndex;
+            td[10].textContent = raft.snapshot.logTerm;
+            td[11].textContent = raft.snapshot.dataSize;
+            clearTimeout(heartbeatflat);
+            heartbeatflat = setTimeout(() => {td[2].className = 'flat'}, 1000);
+          };
+          evtSource.onerror = function(e) {
+            tr.className = trClassName + ' bg-danger';
+            td[1].textContent = 'Disconnected';
+            td[2].className = '';
+            clearTimeout(heartbeatflat);
+          };
+          evtSource.addEventListener('config', (e) => {
+            window.location.reload();
+          }, false);
+        }
+      }).catch(err => alert(err));
+    </script>
   </body>
 </html>
