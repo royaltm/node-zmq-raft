@@ -1,5 +1,6 @@
 raft:
 {
+    label: "Test"
     id: "local"
 
     secret: ""
