@@ -78,7 +78,7 @@
       </div>
       <div class="row">
         <div class="col-sm">
-          <table class="table table-striped">
+          <table class="table">
             <thead class="thead-dark">
               <tr>
                 <th scope="col" class="text-right">#</th>
@@ -94,6 +94,7 @@
                 <th scope="col" class="text-right">Snap. Index</th>
                 <th scope="col" class="text-right">Snap. Term</th>
                 <th scope="col" class="text-right">Snap. Size</th>
+                <th scope="col" class="text-right">Timestamp</th>
               </tr>
             </thead>
             <tbody id="clusterbody">
@@ -116,76 +117,133 @@
           <td class="text-right"></td>
           <td class="text-right"></td>
           <td class="text-right"></td>
+          <td class="text-right"><time itemprop="stateChangeTime" datetime=""></time></td>
         </tr>
       </template>
     </div>
-<!--     <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
- --> 
     <script>
-      fetch('/status').then(response => response.json()).then(status => {
-        const { peers, port, label } = status
-            , noderow = document.getElementById('noderow');
+      fetch('/status').then(response => response.json()).then(zmqRaftMonitorConfigUpdate);
+
+      function zmqRaftMonitorConfigUpdate({ peers, port, label }) {
+        const noderow = document.getElementById('noderow')
+            , tbody = document.getElementById("clusterbody")
+            , currentRows = new Map();
+
+        for (let tr of tbody.querySelectorAll("tr")) {
+          let key = tr.querySelector("td.peer-url").textContent + 
+                    '/' + tr.querySelector("td.peer-id").textContent;
+          currentRows.set(key, tr);
+        }
 
         if (label) {
           document.getElementById('title_header').textContent = document.querySelector("head title").textContent = 'ØMQ Raft: ' + label;
         }
 
         for(let [index, [id, url]] of peers.entries()) {
-          let tbody = document.getElementById("clusterbody");
-          let nclone = document.importNode(noderow.content, true);
-          let tr = nclone.querySelector("tr");
-          let trClassName = tr.className;
-          let td = nclone.querySelectorAll("td");
-          nclone.querySelector("th").textContent = index + 1;
-          td[0].textContent = id;
-          td[1].textContent = 'Unknown';
-          td[3].textContent = url;
-          tbody.appendChild(nclone);
+          let key = url + '/' + id
+            , row = currentRows.get(key);
 
-          let ipaddr = url.match(/tcp:\/\/(.+):\d+/)[1];
-          const evtSource = new EventSource('//' + ipaddr + ':' + port + '/monitor');
-          evtSource.onopen = function(e) {
-            td[2].className = 'flat';
-          };
-          let heartbeatflat;
-          evtSource.onmessage = function(e) {
-            let raft = JSON.parse(e.data);
-            td[1].textContent = raft.state;
-            td[2].className = 'ping';
-            switch(raft.state.toLowerCase()) {
-              case 'leader':
-                tr.className = trClassName + ' bg-primary'; break;
-              case 'follower':
-                tr.className = trClassName + ' bg-success'; break;
-              case 'candidate':
-                tr.className = trClassName + ' bg-warning'; break;
-              case 'client':
-                tr.className = trClassName + ' bg-info'; break;
-            }
-            td[4].textContent = raft.currentTerm;
-            td[5].textContent = raft.commitIndex;
-            td[6].textContent = raft.lastApplied;
-            td[7].textContent = raft.firstIndex;
-            td[8].textContent = raft.lastIndex;
-            td[9].textContent = raft.snapshot.logIndex;
-            td[10].textContent = raft.snapshot.logTerm;
-            td[11].textContent = raft.snapshot.dataSize;
-            clearTimeout(heartbeatflat);
-            heartbeatflat = setTimeout(() => {td[2].className = 'flat'}, 1000);
-          };
-          evtSource.onerror = function(e) {
-            tr.className = trClassName + ' bg-danger';
-            td[1].textContent = 'Disconnected';
-            td[2].className = '';
-            clearTimeout(heartbeatflat);
-          };
-          evtSource.addEventListener('config', (e) => {
-            window.location.reload();
-          }, false);
+          if (row != null) {
+            currentRows.delete(key);
+          }
+          else {
+            let heartbeatflat
+              , ipaddr = url.match(/tcp:\/\/(.+):\d+/)[1];
+
+            row = document.importNode(noderow.content, true);
+
+            let tr = row.querySelector("tr")
+              , trClassName = tr.className
+              , td = tr.querySelectorAll("td")
+              , time = td[12].querySelector("time");
+
+            const updateState = (state) => {
+              if (td[1].textContent != state) {
+                let ts = new Date();
+                time.dateTime = ts.toISOString();
+                time.textContent = ts.toLocaleTimeString();
+              }
+              td[1].textContent = state;
+              switch(state.toLowerCase()) {
+                case 'unknown':
+                  td[2].className = '';
+                  tr.className = trClassName;
+                  break;
+                case 'connected':
+                  td[2].className = 'flat';
+                  tr.className = trClassName;
+                  break;
+                case 'client':
+                  td[2].className = 'ping';
+                  tr.className = trClassName + ' bg-info';
+                  break;
+                case 'follower':
+                  td[2].className = 'ping';
+                  tr.className = trClassName + ' bg-success';
+                  break;
+                case 'candidate':
+                  td[2].className = 'ping';
+                  tr.className = trClassName + ' bg-warning';
+                  break;
+                case 'leader':
+                  td[2].className = 'ping';
+                  tr.className = trClassName + ' bg-primary';
+                  break;
+                default:
+                  td[2].className = '';
+                  tr.className = trClassName + ' bg-danger';
+              }
+            };
+
+            td[0].textContent = id;
+            td[3].textContent = url;
+            updateState('Unknown');
+
+            const evtSource = new EventSource('//' + ipaddr + ':' + port + '/monitor');
+            evtSource.onopen = function(e) {
+              clearTimeout(heartbeatflat);
+              updateState('Connected');
+            };
+            evtSource.onmessage = function(e) {
+              clearTimeout(heartbeatflat);
+              if (e.lastEventId !== id) {
+                evtSource.close();
+                updateState('Invalid');
+              }
+              else {
+                let data = JSON.parse(e.data);
+                updateState(data.state);
+                td[4].textContent = data.currentTerm;
+                td[5].textContent = data.commitIndex;
+                td[6].textContent = data.lastApplied;
+                td[7].textContent = data.firstIndex;
+                td[8].textContent = data.lastIndex;
+                td[9].textContent = data.snapshot.logIndex;
+                td[10].textContent = data.snapshot.logTerm;
+                td[11].textContent = data.snapshot.dataSize;
+                heartbeatflat = setTimeout(() => {td[2].className = 'flat'}, 1500);
+              }
+            };
+            evtSource.onerror = function(e) {
+              clearTimeout(heartbeatflat);
+              updateState('Disconnected');
+            };
+            evtSource.addEventListener('config', (e) => {
+              let data = JSON.parse(e.data);
+              zmqRaftMonitorConfigUpdate(data);
+            }, false);
+          }
+
+          row.querySelector("th").textContent = index + 1;
+          tbody.appendChild(row);
         }
-      }).catch(err => alert(err));
+
+        let index = peers.length;
+        for(let row of currentRows.values()) {
+          row.querySelector("th").textContent = ++index;
+          tbody.appendChild(row);
+        }
+      }
     </script>
   </body>
 </html>
