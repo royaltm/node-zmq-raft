@@ -1,5 +1,5 @@
-Implementation details
-----------------------
+Implementation
+--------------
 
 The differences of the ØMQ Raft implementation to the original RAFT proposal:
 
@@ -11,17 +11,17 @@ The differences of the ØMQ Raft implementation to the original RAFT proposal:
 
 Additions:
 
-#### Update idempotency
+### Update idempotency
 
-The idempotency of updates is achieved by (limited) tracking of request ids sent as a part of RequestUpdate request messages. It is guaranteed that the request with a unique request id will be applied only once to the log.
-The tracking is limited in time, that is the request id consists in part of the real time signature and
-it will expire after a specified time. If the request id is considered not fresh the update will not be applied
+The idempotency of updates is achieved by caching in memory and storing in the log request ids sent as part of the `RequestUpdate RPC` together with the appended state. Update requests with a unique request id will be applied only once to the log as long as the request id is found in the cache. To limit the memory usage, the caching is limited in time, that is the request id consists in part of the real time signature and it will expire after a specified time. If the request id is considered not fresh the update will not be applied
 and the error indicating this case will be returned to the requesting party.
-The default update request expiration time is 7 hours. Thus the client have limited time to get its updates to the cluster and if that time passes it should refuse to complete the update.
-In practical measures it means that clients that randomly updates the state should not be disconnected from cluster for the longer period than expiration time (7 hours by default).
+
+The default update request expiration time is 7 hours. Thus the client have limited time to get its updates to the cluster and if that time passes the cluster peers should refuse to complete the update.
+
+In practical measures it means that clients that randomly update the state should not be disconnected from the cluster for the longer period than the expiration time (7 hours by default).
 This limit can not be disabled, but it may be extended by a large (limited to a few years) amount.
 
-#### Checkpointing
+### Checkpointing
 
 ØMQ Raft introduces 3 types of log entries: STATE, CONFIG and CHECKPOINT.
 
@@ -48,8 +48,8 @@ This is where ØMQ Raft comes to the rescue:
 9. Now A(T2) can commit the CHECKPOINT entry successfully and in the process (RAFT's log completeness rule) also any previous uncommitted log entries (T1).
 
 
-Cluster configuration change (peer membership)
-----------------------------------------------
+Updating cluster configuration (peer membership)
+------------------------------------------------
 
 ØMQ Raft implements cluster peer membership changes with transitional stage as proposed in RAFT using `ConfigUpdate RPC`.
 
