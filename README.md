@@ -99,6 +99,8 @@ This is implemented in `ZmqRaftSubscriber` class.
 Hier
 ----
 
+The protocol and some implementation details are presented here: [PROTO](PROTO.md) and [RAFT](RAFT.md).
+
 Public main classes:
 
 Assuming:
