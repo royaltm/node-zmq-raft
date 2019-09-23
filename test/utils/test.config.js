@@ -20,11 +20,11 @@ test('should give defaults when no config file is provided', t => {
   })
   .then(config => {
     t.deepEquals(config, createOptions());
-    return readConfig('', 'foo.bar');
+    return readConfig('foo.xyz');
   })
   .catch(err => {
     t.strictSame(err, new Error("Unrecognized config file type. Use one of: yaml, json, hjson, toml, js"));
-    return readConfig('foo.xyz');
+    return readConfig('', 'foo.bar');
   })
   .catch(err => {
     t.strictSame(err, new Error("There is no such configuration namespace: foo.bar"));
