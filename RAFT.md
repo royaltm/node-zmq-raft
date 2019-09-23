@@ -13,7 +13,7 @@ Additions:
 
 ### Update idempotency
 
-The idempotency of updates is achieved by caching in memory and storing in the log request ids sent as part of the `RequestUpdate RPC` together with the appended state. Update requests with a unique request id will be applied only once to the log as long as the request id is found in the cache. To limit the memory usage, the caching is limited in time, that is the request id consists in part of the real time signature and it will expire after a specified time. If the request id is considered not fresh the update will not be applied
+The idempotency of updates is achieved by caching in memory and storing in the log, request ids sent as part of the `RequestUpdate RPC` together with the appended state. Update requests with a unique request id will be applied only once to the log as long as the request id is found in the cache. To limit the memory usage, the caching is limited in time, that is the request id consists in part of the real time signature and it will expire after a specified time. If the request id is considered not fresh the update will not be applied
 and the error indicating this case will be returned to the requesting party.
 
 The default update request expiration time is 7 hours. Thus the client have limited time to get its updates to the cluster and if that time passes the cluster peers should refuse to complete the update.
@@ -32,7 +32,7 @@ When a peer becomes the leader its RAFT log may contain uncommitted entries. In 
 
 This situation is easily demonstrable:
 
-Let's assume we have 3 raft peers: A, B and C and A is a current leader in term T1.
+Let's assume we have 3 raft peers: A, B and C and A is the leader of the current term T1.
 
 1. Shut down all followers (B and C). A(T1) is still serving clients: according to RAFT unless there is an update request the leader does not care for the state of the followers.
 2. A client sends a request udpate RPC to the current leader - A(T1).
@@ -73,13 +73,13 @@ There can be many techniques how to approach this in detail. However one of the 
 There are however circumstances which suggest this rule is only safe in accordance with the RAFT protocol but doesn't include the preservation of the update requests' idempotency. Let's imagine that there is some buggy or partitioned client that is still waiting for the confirmation of its update request long after it has been added and committed to the log, repeating its requests endlessly. If we were to remove log entries that contained its updated entry we would also have removed the information about the request id that updated this entry, loosing in the process the necessary information for that update request to be idempotent. If we did delete the log files and somehow the client would finally got through with its RPC message, the cluster would treat this update as a completely new request.
 This is partially true because peers possess the cache of request ids in memory, however in case the leader was restarted after deleting the log entries the above hypothetical situation could become true.
 
-The above problem is partially addressed in a way `FileLog` initializes itself in R/W mode. Upon identifying the snapshot's LOG INDEX it sets its `firstIndex` property to the one following the snapshot's LOG INDEX, but nevertheless it scans all existing files in the RAFT LOG directory and builds the request id cache in memory from all of the log entries including entries preceding the snapshot's LOG INDEX. The expired request ids are not being added to the cache but instead are being counted. This procedure is performed on each log file backwards reading from the last log entry down to the first available log entry and is stopped once all the files has been scanned or the number of expired ids exceeds the capacity of the single log file, thus assuming that all previous log files contains already expired request id entries. The log entry index that is below the last known unexpired request id is called the PRUNE LOG INDEX and can be retrieved from the server using `RequestLogInfo RPC`. It's being dynamically updated when the cached request ids expires.
+The above problem is partially addressed in a way `FileLog` initializes itself in R/W mode. Upon identifying the snapshot's LOG INDEX it sets its `firstIndex` property to the one following the snapshot's LOG INDEX, but nevertheless it scans all existing files in the RAFT LOG directory and builds the request id cache in memory from all of the log entries including entries preceding the snapshot's LOG INDEX. The expired request ids are not being added to the cache but instead are being counted. This procedure is performed on each log file backwards reading from the last log entry down to the first available log entry and is stopped once all the files has been scanned or the number of expired ids exceeds the capacity of the single log file, thus assuming that all previous log files contains already expired request id entries. The log entry index that is below the last known unexpired request id is called the PRUNE LOG INDEX and can be retrieved from the server using `RequestLogInfo RPC`. It's being dynamically updated when the cached request ids expire.
 
 Knowing this one could argue that it's still safe to create a compact snapshot up to the last applied index or even the commit log (assuming an external log parser would be used) and delete the log files only if the entirety of the file's entries are below or equal to the PRUNE LOG INDEX.
 
-This is, again, not entirely true. Let's imagine a circumstance in which some of the cluster peers' data was deleted or a new peer was added to the cluster. Of course those peers will recreate the log files via cluster `AppendEntries RPC` messages, but they will only receive LOG entries succeeding the snapshot's LOG INDEX. From the RAFT standpoint the LOG entries before the snapshot's LOG ENTRY do not exist. If one of them would become a leader, again we are loosing information.
+This is, again, not entirely true. Let's imagine a circumstance in which some of the cluster peers' data was deleted or a new peer was added to the cluster. Of course those peers will recreate the log files via cluster `AppendEntries RPC` messages, but they will only receive log entries succeeding the snapshot's LOG INDEX. From the RAFT standpoint the log entries before the snapshot's LOG INDEX do not exist. If one of the new peers would become a leader, again we are loosing information.
 
-Thus the safest way to select the LOG INDEX of the compation snapshot is using the following formula:
+Thus the safest way to select the LOG INDEX of the compaction snapshot is using the following formula:
 
 ```
 MIN(COMMIT INDEX, PRUNE INDEX)
