@@ -95,7 +95,7 @@ var compactionIndex = Math.min(raft.commitIndex, raft.pruneIndex);
 
 or when compacting a log using an external program:
 
-```
+```js
 var compactionIndex = await client.requestLogInfo(true)
                             .then(({commitIndex, pruneIndex}) => Math.min(commitIndex, pruneIndex));
 ```
@@ -106,7 +106,7 @@ This can be approached in at least two ways:
 
 From within the ØMQ Raft process. In this instance use `fileLog.installSnapshot` method after creating snapshot file with the `fileLog.createTmpSnapshot`. E.g:
 
-```
+```js
 var compactionTerm = async fileLog.termAt(compactionIndex);
 var readStream = statemachine.createSnapshotReadStream();
 var snapshot = fileLog.createTmpSnapshot(compactionIndex, compactionTerm, readStream);
