@@ -8,15 +8,15 @@ Data types
 
 Protocol message frames body may be encoded as one of the following type:
 
-* `bytes` - an array of bytes containing zero or more bytes
-* `string` - an utf-8 encoded string of zero or more bytes (no null termination)
-* `uint` - an unsigned least significant byte first variable length integer (1 - 8 bytes), empty frame is interpreted as a protocol error
-* `nuint` - an unsigned least significant byte first variable length integer (1 - 8 bytes), empty frame is interpreted as null
-* `uint32` - an unsigned least significant byte first variable length integer (1 - 4 bytes), empty frame is interpreted as a protocol error
-* `bool` - a boolean (true: body must have at least 1 byte and the first byte must not be 0, false: otherwise)
-* `json` - a MessagePack encoded JSON data: http://msgpack.org
-* `entry` - a log entry
-* `reqid` - 12 byte unique request id
+* `bytes` - An array of bytes containing zero or more bytes.
+* `string` - An utf-8 encoded string of zero or more bytes (no null termination).
+* `uint` - An unsigned least significant byte first variable length integer (1 - 8 bytes), empty frame is interpreted as a protocol error.
+* `nuint` - An unsigned least significant byte first variable length integer (1 - 8 bytes), empty frame is interpreted as `null`.
+* `uint32` - An unsigned least significant byte first variable length integer (1 - 4 bytes), empty frame is interpreted as a protocol error.
+* `bool` - A boolean. For `true`: body must have at least 1 byte and the first byte must not be 0, `false` otherwise.
+* `json` - A MessagePack encoded JSON data: http://msgpack.org
+* `entry` - A log entry.
+* `reqid` - A 12 byte unique request id.
 
 The `reqid` 12-byte request id is constructed as follows:
 
@@ -27,9 +27,9 @@ The `reqid` 12-byte request id is constructed as follows:
 
 The `entry` data is constructed as follows:
 
-- 12-bytes `reqid`
-- 1-byte log entry type: 0 - state, 1 - config, 2 - checkpoint
-- 7-byte log entry term (least significant byte first)
+- 12-bytes `reqid`,
+- 1-byte log entry type: 0 - state, 1 - config, 2 - checkpoint,
+- 7-byte log entry term (least significant byte first),
 - arbitrary log data
 
 ### Examples:
@@ -150,7 +150,7 @@ Peer
 Each ØMQ peer opens a single ØMQ ROUTER socket and binds it to the indicated in the configuration ip address and port.
 
 Each ØMQ peer must have a unique PEER ID (`string`) and an URL of its ROUTER socket.
-Information about each peer's ID and (external) URL must be available to all other peers in the cluster.
+Information about each peer's ID and a (visible by the cluster) URL must be available to all other peers in the cluster.
 
 Each ØMQ peer opens as many ØMQ DEALER sockets as there are other peers in the cluster, connected to the other peers' ROUTER sockets.
 
@@ -160,22 +160,22 @@ For communication between peers in the RAFT cluster the following RPC messages a
 * AppendEntries RPC
 * InstallSnapshot RPC
 
-Peer's RPC expects a response to be received within RPC_TIMEOUT (preferred 50 ms) interval. When the response is not received within this interval the requesting party repeats sending the last request message.
+Peer's RPC expects a response to be received within a RPC_TIMEOUT (preferred 50 ms) interval. When the response is not being received within this interval the requesting party repeats sending the last request message.
 
-For some message types: AppendEntries, InstallSnapshot the RPC_TIMEOUT may be longer but not longer than the half of the ELECTION_TIMEOUT_MIN (preferred 200 ms).
+For message types: AppendEntries and InstallSnapshot the RPC_TIMEOUT may be longer but not longer than the half of the ELECTION_TIMEOUT_MIN (preferred 200 ms).
 
-The first frame of all the above message types identifies each sent message for debouncing.
+The first frame of all of the above message types identifies messages for debouncing.
 This frame type is `uint`. Its value starts at 1 and increases monotonically for each subsequent message until value reaches 16777216 at which it becomes 0.
 
 
 Client
 ======
 
-A client should establish a ØMQ DEALER socket and connects it at first to all of the known cluster peer's (seed peers) ROUTER sockets. Client should then ask each known peer at a time about the cluster state, peer URLs and the current LEADER ID using a RequestConfig RPC. In case the cluster is in transition state (no leader) the client should repeat sending RequestConfig messages until the response contains a valid LEADER ID. Upon success the client should disconnect its DEALER socket from all other peers and connect it only (or leave the connection) to the leader's ROUTER URL. The client should also update its list of all known peers in the cluter.
+A client should establish a ØMQ DEALER socket and connect it at first to all of the known cluster peer's (seed peers) ROUTER sockets. Client should then ask each known peer at a time about the cluster state, peer URLs and the current LEADER ID using a RequestConfig RPC. In case the cluster is in the transition state (no leader) the client should repeat sending RequestConfig messages until the response contains a valid LEADER ID. Upon success the client should disconnect its DEALER socket from all other peers and connect it only (or leave the connection) to the leader's ROUTER URL. The client should also update its list of all known peers in the cluter.
 
-The client may ask for the current cluster status and configuration periodically using RequestConfig RPC.
+The client may ask for the current cluster status and configuration periodically using RequestConfig RPC to detect changes eagerly.
 
-Once the client knows the current leader it should send all messages to the leader's url.
+Once the client knows the current leader it should send all messages to the current leader's url.
 
 There are two conditions that may break the known leader state:
 
@@ -183,16 +183,19 @@ There are two conditions that may break the known leader state:
 2. The client waits for the response from a peer longer than SERVER_RESPONSE_TTL (preferred: 500 ms)
 or the peer responds negatively without indicating the current LEADER ID.
 
-In the first scenario the client should connect its DEALER socket to the leader's URL indicated in the last response, disconnect from othe peer's and send the last request message again to the new leader.
+The "broken known leader state" procedure:
 
-In the second scenario the client should connect its DEALER sockets to all known cluster peers, wait a SERVER_ELECTION_GRACE_MS (preferred: 300 ms) interval and send the last request message again to each peer in turn until it receives a positive response or a negative response but with the valid information about the currently elected LEADER ID. Upon that the client should connect its DEALER socket to the current leader's URL and disconnect from all other peers.
+In the first scenario the client should connect its DEALER socket to the new leader's URL indicated in the last response, disconnect from other peers and send the last request message again to the new leader.
+
+In the second scenario the client should connect its DEALER sockets to all known cluster peers, wait a SERVER_ELECTION_GRACE_MS (preferred: 300 ms) interval and send the last request message again to each peer in turn until it receives a positive response or a negative response but with the valid information about the currently elected LEADER ID. In this instance the client should connect its DEALER socket to the current leader's URL and disconnect from all other peers and send the last request message again to the new leader.
 
 The client may use the following RPC messages for communicating with the cluster peers:
 
-* RequestConfig RPC
-* RequestUpdate RPC
-* RequestEntries RPC
-* RequestLogInfo RPC
+* RequestConfig RPC - for retrieving current cluster's peer configuration,
+* RequestUpdate RPC - for updating the state, that is appending new log entries,
+* ConfigUpdate RPC - for changing the cluster's peer configuration,
+* RequestEntries RPC - for retrieving snaphost and log entries,
+* RequestLogInfo RPC - for retrieving additional information about log entries state,
 * any other message following ClientDispatch RPC is being forwarded to the state machine
 
 
@@ -298,8 +301,8 @@ ClientDispatch RPC
 
 This message provides a common signature of any other client RPC messages.
 
-For custom state-machine implementations the message type should consist of at least 2 bytes.
-All single byte message types are reserved for future extension of ØMQ RAFT protocol.
+For a custom state-machine implementations the message type should consist of at least 2 bytes.
+All single byte message types are reserved for the future extension of ØMQ RAFT protocol.
 
 Request frames:
 
@@ -353,7 +356,7 @@ RequestUpdate RPC
 -----------------
 
 To make this RPC idempotent, the unique request id used in this message is written as a part of the log entry.
-This RPC also defines the time during which the `reqid` is fresh. If the RequestUpdate RPC doesn't succeed within that time (due to the cluster down time or network outage) it will be rejected if finally reaches the cluster.
+This RPC also defines the time during which the `reqid` is fresh. If the RequestUpdate RPC doesn't succeed within that time (due to the cluster down time or a network outage) it will be rejected if finally reaches the cluster.
 
 Request frames:
 
@@ -379,22 +382,20 @@ optional:
                      | upon status is false (a failure) a LEADER ID as a JSON string or null
 ```
 
-If the update status is `true` but there is no 3rd frame in the response it indicates that the update was accepted but the log entry hasn't been committed yet. The response message in this form may be sent several times by the peer and each time it is received by the client it should reset the client's RPC timeout clock.
+Once the response's update status is `false` but the 3rd frame is included the client should follow the "broken known leader state" procedure.
 
-Once the response's update status is `true` and the LOG INDEX is being included as a 3rd frame, response indicates a successfull update.
+Once the response's update status is `false` and the 3rd frame is missing, response indicates that a request has expired: a `reqid` is older than REQUEST_UPDATE_TTL (default: 8 hours). This response is final and in this instance the client should indicate a failure to the requesting party.
 
-Once the response's update status is `false` and the 3rd frame is missing, response indicates that a request has expired (a `reqid` is older than REQUEST_UPDATE_TTL (default: 8 hours).
+If the update status is `true` but there is no 3rd frame in the response it indicates that the update was accepted but the log entry hasn't been committed yet. The response message in this form may be sent several times by the server peer and each time it's being received, the client should reset its RPC timeout clock.
 
-Once the response's update status is `false` but the 3rd frame is included the client should follow the broken leader state procedure.
-
-
+Once the response's update status is `true` and the LOG INDEX is being included as a 3rd frame, response indicates a successfull update. This response is final and in this instance the client should indicate a success to the requesting party.
 
 
 ConfigUpdate RPC
 ----------------
 
 To make this RPC idempotent, the unique request id used in this message is written as a part of the log entry.
-This RPC also defines the time during which the `reqid` is fresh. If the RequestConfigUpdate RPC doesn't succeed within that time (due to the cluster down time or network outage) it will be rejected if finally reaches the cluster.
+This RPC also defines the time during which the `reqid` is fresh. If the RequestConfigUpdate RPC doesn't succeed within that time (due to the cluster down time or a network outage) it will be rejected if finally reaches the cluster.
 
 Request frames:
 
@@ -414,10 +415,10 @@ no. |   type | value | description
 -----------------------------------------
   1 |  reqid |       | unique request id
   2 |   uint |       | update status, one of:
-                     | 0: not a leader
-                     | 1: accept or success
-                     | 2: configuration argument error
-                     | 3: cluster busy
+                     | 0: not a leader,
+                     | 1: accept or success,
+                     | 2: configuration argument error,
+                     | 3: cluster busy,
                      | 4: expired request id
 optional:
   3 |   json |       | in case of status=0 a LEADER ID as a JSON string or null
@@ -425,17 +426,21 @@ optional:
                      | in case of status=2 an error message and type as a JSON object
 ```
 
-If the new configuration data has wrong format or there are conflicts of PEER_ID-PEER_URL pairs in the new config with the old config (e.g. PEER_ID has different PEER_URL or two PEER_IDs share the same PEER_URL) the status=2 is returned in response.
+If the new configuration data format is wrong or there are conflicts of PEER_ID-PEER_URL pairs in the new config with the old config (e.g. PEER_ID has different PEER_URL or two PEER_IDs share the same PEER_URL) the status = 2 is returned in the response. The last frame will contain the json object with the "name" and "message" properties as strings. E.g.:
 
-If the cluster is currently during the configuration transition, response's status is 3. In this instance repeat request after some reasonable time interval.
+```
+{name: "TypeError", message: "peers must be an array"}
+```
 
-Response's status=4 indicates that a request has expired (a `reqid` is older than REQUEST_UPDATE_TTL (default: 8 hours).
+If the cluster configuration is currently transitional (e.g. the previous configuration update is still in progress), the response's status will be 3. In this instance the client should repeat its request after some reasonable time interval (e.g. a few seconds).
 
-Once the response's status is 0 the client should follow the broken leader state procedure.
+The response's status = 4 indicates that a request has expired: a `reqid` is older than REQUEST_UPDATE_TTL (default: 8 hours). This response is final and in this instance the client should indicate a failure to the requesting party.
 
-If the update status=1 but there is no 3rd frame in the response it indicates that the configuration update was accepted but the log Cnew entry hasn't been committed yet. The response message in this form may be sent several times by the peer and each time it is received by the client it should reset the client's RPC timeout clock.
+Once the response's status is 0 the client should follow the "broken known leader state" procedure.
 
-Once the response's update status=1 and the LOG INDEX is being included as a 3rd frame, response indicates a successfull configuration update.
+If the update status=1 but there is no 3rd frame in the response it indicates that the configuration update was accepted but the log's `Cnew` entry hasn't been committed yet. The response message in this form may be sent several times by the server peer and each time it's being received, the client should reset its RPC timeout clock.
+
+Once the response's update status=1 and the LOG INDEX is being included as a 3rd frame, response indicates a successfull configuration update. This response is final and in this instance the client should indicate a success to the requesting party.
 
 
 RequestEntries RPC
@@ -454,7 +459,7 @@ no. |   type | value | description
 optional:
   4 |  nuint |       | number of the requested log entries, in follow up messages may be 0 to stop server from sending any further responses
 optional:
-  5 |   uint |       | next snapshot byte offset, ignored if previous LOG INDEX is not in the snapshot
+  5 |   uint |       | next snapshot byte offset, ignored if "previous LOG INDEX" is not before the log's first index.
 ```
 
 Response frames:
@@ -463,30 +468,34 @@ Response frames:
 no. |   type | value | description
 -----------------------------------------
   1 | uint32 |       | request id
-  2 |   uint |       | status 0: not a leader, 1: this is the last entry, 2: more entries coming, 3: snapshot chunk
+  2 |   uint |       | request status, one of: 
+                     | 0: not a leader,
+                     | 1: this is the last entry,
+                     | 2: more entries are being sent,
+                     | 3: a snapshot chunk
   3 |   json |       | in case of status=0 a LEADER ID as a JSON string or null
                      | in case of status=1 or 2 this frame must be ignored
                      | in case of status=3 a JSON array containing numbers: [chunk byte offset, snaphost total byte size, snapshot term]
 
 optional:
-  4 |   uint |       | a LOG INDEX of the last entry/snapshot chunk sent or previous LOG INDEX if there are no entries in the response
+  4 |   uint |       | a LOG INDEX of the last entry/snapshot chunk sent in this message or a previous LOG INDEX if there are no entries in this response
 optional:
   5 |  bytes |       | in case of status=3 the snapshot chunk
-  5 |  entry |       | in case of status=1 or 2 the first log entry following previous LOG INDEX
+  5 |  entry |       | in case of status=1 or 2 the first log entry following "previous LOG INDEX"
   N |  entry |       | in case of status=1 or 2 the last log entry
 ```
 
-RequestEntries RPC responses are being sent in a pipeline. The peer will respond with up to REQUEST_ENTRIES_PIPELINES (default: 5) response messages prior to receiving the follow up client request messages.
+RequestEntries RPC responses are being sent in a streaming pipeline. The peer will respond with up to REQUEST_ENTRIES_PIPELINES (default: 5) response messages prior to expecting the first follow up client request message.
 
-The client upon receiving a response with status=2 or status=3 with the last snapshot chunk should send a follow up request message replacing previous LOG INDEX frame with the value of the LOG INDEX from the response message, retaining request id frame value of the previous request.
+The client upon receiving a response with status=2 or status=3 with the last snapshot chunk should send a follow up request message replacing previous LOG INDEX frame with the value of the LOG INDEX from the response message (no. 4), retaining the "request id" frame value of the previous request.
 
-The client upon receiving a response with status=3 and not the last snapshot chunk should send a follow up request message retaining previous LOG INDEX frame and request id frame value of the previous request. The client may optionally add an expected next snapshot byte offset for extra validation.
+The client upon receiving a response with status=3 and the response does not contain the last snapshot chunk, should send a follow up request message retaining the "previous LOG INDEX" frame (no. 4) and the "request id" frame value of the previous request. The client may optionally add an expected "next snapshot byte offset" (no. 5) for extra validation.
 
-The client upon receiving response with status=1 should end RPC with a success.
+The client upon receiving response with status=0 should follow the "broken known leader state" procedure.
 
-The client upon receiving response with status=0 should follow the broken leader state procedure.
+The client upon receiving response with status=1 should end an RPC with a success.
 
-The client may stop the peer from sending further responses (and clean up the reserved pipeline) by including 4th frame equal to 0 in the follow up request message.
+Before receiving the last response with a status=1, the client may stop the server peer from sending further responses (allowing server to clean up the reserved pipeline sooner) by including frame no. 4 with a 0 in the follow up request message. Without it, the pipeline is being cleaned up after REQUEST_ENTRIES_TTL (default: 5-7 seconds). There is a hard limit of request entries RPCs being served in parallel, indicated by a: REQUEST_ENTRIES_HIGH_WATERMARK constant (8000). If the number of concurrent request entries is reached, new requests will be silently ignored by the peer until the number of the requests being served will drop below the watermark number.
 
 
 RequestLogInfo RPC
@@ -512,18 +521,18 @@ no. |   type | value | description
   3 |   json |       | LEADER ID as a JSON string or null
   4 |   uint |       | peer's current TERM
   5 |   uint |       | peer's log first INDEX
-  6 |   uint |       | peer's state machine LAST APPLIED INDEX
+  6 |   uint |       | peer's state machine's LAST APPLIED INDEX
   7 |   uint |       | peer's COMMIT INDEX
   8 |   uint |       | peer's log last INDEX
   9 |   uint |       | peer's snapshot byte size
- 10 |   uint |       | peer's log latest index that is safe to be pruned
+ 10 |   uint |       | peer's PRUNE INDEX is a latest index that is safe to be deleted
 ```
 
 
 RequestBroadcastStateUrl RPC
 ----------------------------
 
-This RPC is only valid when the ØMQ RAFT cluster state machine is a `BroadcastStateMachine`.
+This RPC is being handled by the `BroadcastStateMachine` and is only valid when the ØMQ RAFT cluster state machine is a `BroadcastStateMachine`.
 
 ```
 no. |   type | value | description
@@ -544,8 +553,9 @@ optional:
   2 | string |       | a broadcast state ØMQ PUB socket url upon success
 ```
 
-The client, upon missing 2nd frame in the response, should perform a RequestConfig RPC and only when the leader is established should perform this RPC.
-The client, upon receiving ØMQ PUB socket url may connect a ØMQ SUB socket to this url to start receiving StateBroadcast messages.
+The client, upon missing 2nd frame in the response, should perform a RequestConfig RPC and only when the new leader is established should perform this RPC again.
+
+The client, upon receiving ØMQ PUB socket url may connect a ØMQ SUB socket to this url to start receiving `StateBroadcast` messages.
 
 
 StateBroadcast MSG

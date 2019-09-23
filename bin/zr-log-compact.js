@@ -35,8 +35,8 @@ program
   .option('-c, --config <file>', 'Config file')
   .option('-t, --target <file>', 'Target snapshot filename')
   .option('-m, --state-machine <file>', 'State machine path')
-  .option('-i, --index <n>', 'Last index', parseInt)
-  .option('-p, --peer <url>', 'Peer url to determine last index from commit index')
+  .option('-i, --index <n>', 'Compaction index', parseInt)
+  .option('-p, --peer <url>', 'Peer url to determine compaction index from')
   .option('-k, --cluster <secret>', 'Secret cluster identity part of the protocol')
   .option('-d, --dir <dir>', 'LogFile root path')
   .option('-l, --log <dir>', 'LogFile alternative directory')
@@ -44,7 +44,7 @@ program
   .option('-z, --zip <level>', 'State machine compressionLevel option', parseInt)
   .option('-U, --no-unzip', 'State machine unzipSnapshot option')
   .option('-N, --no-prune', 'Skip printing of log files to be pruned')
-  .option('--ns [namespace]', 'Raft config root namespace', 'raft')
+  .option('--ns [namespace]', 'Raft config root namespace [raft]', 'raft')
   .parse(process.argv);
 
 function exitError(status) {
