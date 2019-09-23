@@ -247,3 +247,16 @@ bin/zmq-raft.js -c config/example.hjson 1 &
 bin/zmq-raft.js -c config/example.hjson 2 &
 bin/zmq-raft.js -c config/example.hjson 3 &
 ```
+
+To experiment with our cluster, let's spawn another terminal window and enter the console with:
+
+```
+DEBUG=* npm run cli
+```
+
+Now let's connect to the cluster with: `.connect 127.0.0.1:8047`.
+Ok, let's subscribe to the state machine from another console with: `.subscribe 127.0.0.1:8047`.
+We can now flood the servers with some updates using: `.start some_data`.
+You will see the updates being populated to the subscribers.
+To stop flooding, enter `.stop`.
+To read the whole log, just type: `.read`.
