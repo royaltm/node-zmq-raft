@@ -16,9 +16,9 @@ test('should have functions', t => {
   t.type(bufconv.allocBufNumberLE, 'function');
   t.strictEquals(bufconv.allocBufNumberLE.length, 2);
   t.type(bufconv.writeBufUIntLE, 'function');
-  t.strictEquals(bufconv.writeBufUIntLE.length, 3);
+  t.strictEquals(bufconv.writeBufUIntLE.length, 4);
   t.type(bufconv.writeBufIntLE, 'function');
-  t.strictEquals(bufconv.writeBufIntLE.length, 3);
+  t.strictEquals(bufconv.writeBufIntLE.length, 4);
   t.type(bufconv.writeBufNumberLE, 'function');
   t.strictEquals(bufconv.writeBufNumberLE.length, 3);
   t.type(bufconv.readBufUIntLE, 'function');
@@ -197,7 +197,7 @@ test('allocBufNumberLE', t => {
   t.type(buf = bufconv.allocBufNumberLE(bufconv.MIN_ALLOWED_INTEGER - 1), Buffer);
   t.deepEquals(Array.from(buf), [0,0,0,0,0,0,64,195]);
   t.type(buf = bufconv.allocBufNumberLE(0/0), Buffer);
-  t.deepEquals(Array.from(buf), [0,0,0,0,0,0,248,255]);
+  t.deepEquals(Array.from(buf), [0,0,0,0,0,0,248,buf[7]]);
   t.type(buf = bufconv.allocBufNumberLE(1/0), Buffer);
   t.deepEquals(Array.from(buf), [0,0,0,0,0,0,240,127]);
   t.type(buf = bufconv.allocBufNumberLE(-1/0), Buffer);
@@ -259,6 +259,18 @@ test('writeBufUIntLE', t => {
   buf.fill(0);
   t.strictEquals(bufconv.writeBufUIntLE(bufconv.MAX_ALLOWED_INTEGER, buf, 4), 10);
   t.deepEquals(Array.from(buf), [0,0,0,0,255,255,255,255,255,255]);
+  buf.fill(255);
+  t.deepEquals(Array.from(buf), [255,255,255,255,255,255,255,255,255,255]);
+  t.strictEquals(bufconv.writeBufUIntLE(0, buf, 1, 2), 2);
+  t.deepEquals(Array.from(buf), [255,0,255,255,255,255,255,255,255,255]);
+  t.strictEquals(bufconv.writeBufUIntLE(0, buf, 3, 2), 3);
+  t.deepEquals(Array.from(buf), [255,0,255,255,255,255,255,255,255,255]);
+  t.strictEquals(bufconv.writeBufUIntLE(1, buf, 3, 5), 5);
+  t.deepEquals(Array.from(buf), [255,0,255,1,0,255,255,255,255,255]);
+  t.strictEquals(bufconv.writeBufUIntLE(65534, buf, 0, 7), 7);
+  t.deepEquals(Array.from(buf), [254,255,0,0,0,0,0,255,255,255]);
+  t.strictEquals(bufconv.writeBufUIntLE(bufconv.MAX_ALLOWED_INTEGER, buf, 1, 11), 10);
+  t.deepEquals(Array.from(buf), [254,255,255,255,255,255,255,31,0,0]);
   t.end();
 });
 
@@ -329,6 +341,22 @@ test('writeBufIntLE', t => {
   buf.fill(0);
   t.strictEquals(bufconv.writeBufIntLE(bufconv.MIN_ALLOWED_INTEGER, buf, 4), 10);
   t.deepEquals(Array.from(buf), [0,0,0,0,1,0,0,0,0,0]);
+  buf.fill(255);
+  t.deepEquals(Array.from(buf), [255,255,255,255,255,255,255,255,255,255]);
+  t.strictEquals(bufconv.writeBufIntLE(0, buf, 1, 2), 2);
+  t.deepEquals(Array.from(buf), [255,0,255,255,255,255,255,255,255,255]);
+  t.strictEquals(bufconv.writeBufIntLE(0, buf, 3, 2), 3);
+  t.deepEquals(Array.from(buf), [255,0,255,255,255,255,255,255,255,255]);
+  t.strictEquals(bufconv.writeBufIntLE(1, buf, 3, 5), 5);
+  t.deepEquals(Array.from(buf), [255,0,255,1,0,255,255,255,255,255]);
+  t.strictEquals(bufconv.writeBufIntLE(65534, buf, 0, 7), 7);
+  t.deepEquals(Array.from(buf), [254,255,0,0,0,0,0,255,255,255]);
+  t.strictEquals(bufconv.writeBufIntLE(bufconv.MIN_ALLOWED_INTEGER, buf, 1, 11), 10);
+  t.deepEquals(Array.from(buf), [254,1,0,0,0,0,0,224,0,0]);
+  buf.fill(128);
+  t.deepEquals(Array.from(buf), [128,128,128,128,128,128,128,128,128,128]);
+  t.strictEquals(bufconv.writeBufIntLE(bufconv.MAX_ALLOWED_INTEGER, buf, 1, 11), 10);
+  t.deepEquals(Array.from(buf), [128,255,255,255,255,255,255,31,0,0]);
   t.end();
 });
 
@@ -361,7 +389,7 @@ test('writeBufNumberLE', t => {
   t.strictEquals(bufconv.writeBufNumberLE(bufconv.MIN_ALLOWED_INTEGER - 1, buf), 8);
   t.deepEquals(Array.from(buf), [0,0,0,0,0,0,64,195,0,0]);
   t.strictEquals(bufconv.writeBufNumberLE(0/0, buf), 8);
-  t.deepEquals(Array.from(buf), [0,0,0,0,0,0,248,255,0,0]);
+  t.deepEquals(Array.from(buf), [0,0,0,0,0,0,248,buf[7],0,0]);
   t.strictEquals(bufconv.writeBufNumberLE(1/0, buf), 8);
   t.deepEquals(Array.from(buf), [0,0,0,0,0,0,240,127,0,0]);
   t.strictEquals(bufconv.writeBufNumberLE(-1/0, buf), 8);

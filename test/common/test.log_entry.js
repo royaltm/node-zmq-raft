@@ -122,6 +122,8 @@ test('LogEntry', t => {
   t.strictEquals(entry.readEntryTerm(), Number.MAX_SAFE_INTEGER);
   t.strictEquals(entry.writeEntryTerm(271), undefined);
   t.strictEquals(entry.readEntryTerm(), 271);
+  t.strictEquals(entry.writeEntryTerm(Number.MAX_SAFE_INTEGER), undefined);
+  t.strictEquals(entry.readEntryTerm(), Number.MAX_SAFE_INTEGER);
   t.deepEquals(entry.readEntryData(), Buffer.from([0xc0]));
 
   t.test('bufferToLogEntry', t => {
