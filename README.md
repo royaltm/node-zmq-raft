@@ -63,6 +63,9 @@ ACID storage for:
 
 `FileLog` and `SnapshotFile` class implementations are file based.
 
+See also: [ACID](ACID.md).
+
+
 ### State machine
 
 State machine is opaque to zmq-raft.

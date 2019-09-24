@@ -102,7 +102,7 @@ var compactionIndex = await client.requestLogInfo(true)
 
 The second detail is that the file with a snapshot should be build first and then replaced atomically.
 
-This can be approached in at least two ways:
+This can be approached at least in two ways:
 
 From within the ØMQ Raft process. In this instance use `fileLog.installSnapshot` method after creating snapshot file with the `fileLog.createTmpSnapshot`. E.g:
 

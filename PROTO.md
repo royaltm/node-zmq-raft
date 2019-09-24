@@ -6,31 +6,31 @@
 Data types
 ----------
 
-Protocol message frames body may be encoded as one of the following type:
+Frames of the protocol messages are being encoded as one of the following type:
 
 * `bytes` - An array of bytes containing zero or more bytes.
-* `string` - An utf-8 encoded string of zero or more bytes (no null termination).
-* `uint` - An unsigned least significant byte first variable length integer (1 - 8 bytes), empty frame is interpreted as a protocol error.
-* `nuint` - An unsigned least significant byte first variable length integer (1 - 8 bytes), empty frame is interpreted as `null`.
-* `uint32` - An unsigned least significant byte first variable length integer (1 - 4 bytes), empty frame is interpreted as a protocol error.
-* `bool` - A boolean. For `true`: body must have at least 1 byte and the first byte must not be 0, `false` otherwise.
-* `json` - A MessagePack encoded JSON data: http://msgpack.org
-* `entry` - A log entry.
+* `string` - An UTF-8 encoded string of zero or more characters (no null termination).
+* `uint` - An unsigned, least significant byte first, variable length integer (1 - 8 bytes), empty frame is interpreted as a protocol error.
+* `nuint` - An unsigned, least significant byte first, variable length integer (1 - 8 bytes), empty frame is interpreted as `null`.
+* `uint32` - An unsigned, least significant byte first, variable length integer (1 - 4 bytes), empty frame is interpreted as a protocol error.
+* `bool` - A boolean. `true`: body must have at least 1 byte and the first byte must not be 0, `false` otherwise.
+* `json` - A `MessagePack` encoded `JSON` data: http://msgpack.org
+* `entry` - A RAFT log entry (see below).
 * `reqid` - A 12 byte unique request id.
 
-The `reqid` 12-byte request id is constructed as follows:
+The 12-byte `reqid` is constructed as follows:
 
 - 4-byte value representing the seconds since the Unix epoch (most significant byte first)
 - 3-byte machine identifier
-- 2-byte process id, and
+- 2-byte process id,
 - 3-byte counter, starting with a random value.
 
-The `entry` data is constructed as follows:
+The RAFT log's `entry` data is constructed as follows:
 
 - 12-bytes `reqid`,
-- 1-byte log entry type: 0 - state, 1 - config, 2 - checkpoint,
+- 1-byte log entry type: 0 - STATE, 1 - CONFIG, 2 - CHECKPOINT (see: [RAFT](RAFT.md)),
 - 7-byte log entry term (least significant byte first),
-- arbitrary log data
+- arbitrary log data.
 
 ### Examples:
 
