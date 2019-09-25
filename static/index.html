@@ -124,7 +124,7 @@
     <script>
       fetch('/status').then(response => response.json()).then(zmqRaftMonitorConfigUpdate);
 
-      function zmqRaftMonitorConfigUpdate({ peers, port, label }) {
+      function zmqRaftMonitorConfigUpdate({ peers, label }) {
         const noderow = document.getElementById('noderow')
             , tbody = document.getElementById("clusterbody")
             , currentRows = new Map();
@@ -199,39 +199,49 @@
             td[3].textContent = url;
             updateState('Unknown');
 
-            const evtSource = new EventSource('//' + ipaddr + ':' + port + '/monitor');
-            evtSource.onopen = function(e) {
-              clearTimeout(heartbeatflat);
-              updateState('Connected');
-            };
-            evtSource.onmessage = function(e) {
-              clearTimeout(heartbeatflat);
-              if (e.lastEventId !== id) {
-                evtSource.close();
-                updateState('Invalid');
+            fetch('/peer?id=' + encodeURIComponent(id)).then(res => {
+              if (res.ok) { return res.json() } else { throw new Error("Unreachable"); }
+            }).then(pwm => {
+              if (pwm.id === id) {
+                const evtSource = new EventSource(pwm.url + '/monitor');
+                evtSource.onopen = function(e) {
+                  clearTimeout(heartbeatflat);
+                  updateState('Connected');
+                };
+                evtSource.onmessage = function(e) {
+                  clearTimeout(heartbeatflat);
+                  if (e.lastEventId !== id) {
+                    evtSource.close();
+                    updateState('Invalid');
+                  }
+                  else {
+                    let data = JSON.parse(e.data);
+                    updateState(data.state);
+                    td[4].textContent = data.currentTerm;
+                    td[5].textContent = data.commitIndex;
+                    td[6].textContent = data.lastApplied;
+                    td[7].textContent = data.firstIndex;
+                    td[8].textContent = data.lastIndex;
+                    td[9].textContent = data.snapshot.logIndex;
+                    td[10].textContent = data.snapshot.logTerm;
+                    td[11].textContent = data.snapshot.dataSize;
+                    heartbeatflat = setTimeout(() => {td[2].className = 'flat'}, 1500);
+                  }
+                };
+                evtSource.onerror = function(e) {
+                  clearTimeout(heartbeatflat);
+                  updateState('Disconnected');
+                };
+                evtSource.addEventListener('config', (e) => {
+                  let data = JSON.parse(e.data);
+                  zmqRaftMonitorConfigUpdate(data);
+                }, false);
               }
               else {
-                let data = JSON.parse(e.data);
-                updateState(data.state);
-                td[4].textContent = data.currentTerm;
-                td[5].textContent = data.commitIndex;
-                td[6].textContent = data.lastApplied;
-                td[7].textContent = data.firstIndex;
-                td[8].textContent = data.lastIndex;
-                td[9].textContent = data.snapshot.logIndex;
-                td[10].textContent = data.snapshot.logTerm;
-                td[11].textContent = data.snapshot.dataSize;
-                heartbeatflat = setTimeout(() => {td[2].className = 'flat'}, 1500);
+                updateState('Invalid');
               }
-            };
-            evtSource.onerror = function(e) {
-              clearTimeout(heartbeatflat);
-              updateState('Disconnected');
-            };
-            evtSource.addEventListener('config', (e) => {
-              let data = JSON.parse(e.data);
-              zmqRaftMonitorConfigUpdate(data);
-            }, false);
+            })
+            .catch(err => updateState(err.message || 'Error'));
           }
 
           row.querySelector("th").textContent = index + 1;
