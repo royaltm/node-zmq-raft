@@ -7,6 +7,7 @@
 if (require.main !== module) throw new Error("zmq-raft.js must be run directly from node");
 
 const path = require('path');
+const parseUrl = require('url').parse;
 
 const program = require('commander')
     , debug = require('debug')('zmq-raft');
@@ -24,6 +25,9 @@ program
   .usage('[options] [id]')
   .description('start zmq-raft cluster peer using provided config and optional id')
   .option('-c, --config <file>', 'config file', defaultConfig)
+  .option('-b, --bind <url>', 'router bind url')
+  .option('-p, --pub <url>', 'broadcast state machine url')
+  .option('-w, --www <url>', 'webmonitor url')
   .option('--ns [namespace]', 'raft config root namespace', 'raft')
   .parse(process.argv);
 
@@ -39,9 +43,21 @@ readConfig(program.config, program.ns).then(config => {
 
   if (myPeer) {
     if (myPeer.pub) {
-      config.broadcast || (config.broadcast = {});
-      config.broadcast.url = myPeer.pub;
+      setBroadcastUrl(config, myPeer.pub);
     }
+    if (myPeer.www) {
+      setWebmonitorUrl(config, myPeer.www);
+    }
+  }
+
+  if (program.bind) {
+    setRouterBindUrl(config, program.bind);
+  }
+  if (program.pub) {
+    setBroadcastUrl(config, program.pub);
+  }
+  if (program.www) {
+    setWebmonitorUrl(config, program.www);
   }
 
   return raft.server.builder.build(config)
@@ -93,3 +109,24 @@ readConfig(program.config, program.ns).then(config => {
   console.error(err.stack);
   process.exit();
 });
+
+function setRouterBindUrl(config, bind) {
+    config.router || (config.router = {});
+    config.router.bind = bind;
+}
+
+function setBroadcastUrl(config, pub) {
+    config.broadcast || (config.broadcast = {});
+    config.broadcast.url = pub;
+}
+
+function setWebmonitorUrl(config, webmon) {
+    config.webmonitor || (config.webmonitor = {})
+    let url = parseUrl(webmon);
+    if (url.hostname) {
+      config.webmonitor.host = url.hostname;
+    }
+    if (url.port) {
+      config.webmonitor.port = url.port >>>0;
+    }
+}
