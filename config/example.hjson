@@ -1,20 +1,29 @@
 raft:
 {
+    label: "Example cluster"
+
     secret: ""
 
     data: {
       path: "tmp/raft"
       appendIdToPath: true
-      # the following is used by bin/zmq-raft.js and bin/logcompact.js
+
       compact:
       {
-        watch: "compact/snap.new"
+        watch: true
       }
     }
 
+    # zmq-raft tool will replace broadcast.url setting with the "pub" property for the selected peer
+    # and will replace webmonitor.host and webmonitor.port setting with the "www" property for the selected peer
     peers: [
-      {id: "1", url: "tcp://127.0.0.1:8047", pub: "tcp://127.0.0.1:8048"},
-      {id: "2", url: "tcp://127.0.0.1:8147", pub: "tcp://127.0.0.1:8148"},
-      {id: "3", url: "tcp://127.0.0.1:8247", pub: "tcp://127.0.0.1:8248"}
+      {id: "1", url: "tcp://127.0.0.1:8047", pub: "tcp://127.0.0.1:8048", www: "http://localhost:8050"},
+      {id: "2", url: "tcp://127.0.0.1:8147", pub: "tcp://127.0.0.1:8148", www: "http://localhost:8150"},
+      {id: "3", url: "tcp://127.0.0.1:8247", pub: "tcp://127.0.0.1:8248", www: "http://localhost:8250"},
     ]
+
+    webmonitor:
+    {
+      enable: true
+    }
 }

@@ -228,17 +228,26 @@ raft.server.build({
 })
 ```
 
+See [builder](lib/server/builder.js).
 
-For testing, to quickly setup a raft server with broadcast state machine use `bin/zmq-raft.js`:
+
+### Quick Start Guide.
+
+For testing, to quickly setup a raft server with a broadcast state machine use `bin/zmq-raft.js`:
 
 ```
   Usage: zmq-raft [options] [id]
 
+  start zmq-raft cluster peer using provided config and optional id
 
   Options:
 
     -V, --version        output the version number
-    -c, --config <file>  Config file
+    -c, --config <file>  config file (default: config\default.hjson)
+    -b, --bind <url>     router bind url
+    -p, --pub <url>      broadcast state machine url
+    -w, --www <url>      webmonitor url
+    --ns [namespace]     raft config root namespace (default: raft)
     -h, --help           output usage information
 ```
 
@@ -251,15 +260,95 @@ bin/zmq-raft.js -c config/example.hjson 2 &
 bin/zmq-raft.js -c config/example.hjson 3 &
 ```
 
-To experiment with our cluster, let's spawn another terminal window and enter the console with:
+You can direct your browser to the webmonitor of any of the started peers:
+
+- http://localhost:8050
+- http://localhost:8150
+- http://localhost:8250
+
+To experiment with our cluster, let's spawn another terminal window and enter the `cli` with:
 
 ```
 DEBUG=* npm run cli
 ```
 
-Now let's connect to the cluster with: `.connect 127.0.0.1:8047`.
-Ok, let's subscribe to the state machine from another console with: `.subscribe 127.0.0.1:8047`.
-We can now flood the servers with some updates using: `.start some_data`.
-You will see the updates being populated to the subscribers.
-To stop flooding, enter `.stop`.
-To read the whole log, just type: `.read`.
+1. Now, from the `cli`, let's connect to the cluster with: `.connect 127.0.0.1:8047`.
+2. Let's subscribe to the state machine from another console with: `.subscribe 127.0.0.1:8047`.
+3. We can now flood the cluster with some updates using: `.start some_data`. You will see the updates being populated to the subscribers.
+4. To stop flooding, enter `.stop`.
+5. To read the whole log, type: `.read`.
+6. To get the current log information, type: `.info`.
+7. Type `.help` for more commands.
+
+
+#### Adding another peer to the cluster.
+
+1. Let's start the new peer (preferably from a new terminal window):
+
+```
+DEBUG=* bin/zmq-raft.js -c config/example.hjson \
+  --bind "tcp://*:8347" \
+  --pub tcp://127.0.0.1:8348 \
+  --www http://localhost:8350 4
+```
+
+We've added some arguments that are missing in the `example.hjson` file, so the peer can setup itself properly. On production, those options should've been added to the new peer's unique configuration file.
+
+The important part is that the new peer MUST NOT be included in the `peers` collection of the configuration file.
+
+The new peer `4` will connect itself to the cluster as a client and fetch the current log data. Then it changes its RAFT status to `CLIENT` and opens its ROUTER socket listening for messages.
+
+2. We will send a `ConfigUpdate RPC` to the cluster to update the peer membership for the new peer `4`. From another terminal window:
+
+```
+DEBUG=* bin/zr-config.js -c config/example.hjson -a tcp://127.0.0.1:8347/4
+```
+
+In addition to a bunch of debug messages you should also see:
+
+```
+Requesting configuration change with ...some request id...:
+  tcp://127.0.0.1:8047/1
+  tcp://127.0.0.1:8147/2
+  tcp://127.0.0.1:8247/3
+  tcp://127.0.0.1:8347/4 (added)
+
+Cluster joined configuration changed at index ...some index....
+Cluster final configuration changed at index ...some index...:
+  tcp://127.0.0.1:8047/1 (leader)
+  tcp://127.0.0.1:8147/2
+  tcp://127.0.0.1:8247/3
+  tcp://127.0.0.1:8347/4
+```
+
+The `(leader)` may appear beside a different row.
+
+If you check out the terminal where the new peer was started, you may notice that the peer has changed its status to the `FOLLOWER`.
+
+The web monitor should have also picked up the membership change and there should appear a new row for the new peer: `4`.
+
+From the `cli` you may check the peers' status with the `.peer` command:
+
+```
+> .peers
+Cluster peers:
+1: tcp://127.0.0.1:8047
+2: tcp://127.0.0.1:8147
+3: tcp://127.0.0.1:8247
+4: tcp://127.0.0.1:8347
+```
+
+The leader, if elected, will be highlighted.
+
+You can further experiment with killing peers and observing the leader election process, e.g. while flooding the cluster with updates.
+
+
+### Removing peer from the cluster.
+
+Now to remove the peer `4` from the cluster:
+
+```
+DEBUG=* bin/zr-config.js -c config/example.hjson -d tcp://127.0.0.1:8347/4
+```
+
+After the peer has been successfully removed, if it wasn't a leader during the configuration update it will most probably become a CANDIDATE. This may happen because it wasn't updated with the final `Cnew` peer configuration. This is ok, because the other peers that are still in the cluster will ignore its voting requests. For more information on membership changes read [here](RAFT.md).

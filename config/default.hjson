@@ -1,40 +1,94 @@
 raft:
 {
-    label: "Test"
+    # This cluster's name displayed by the webmonitor.
+    label: "Hello World"
+
+    # The peer id of the raft peer being run from this config. (required)
     id: "local"
 
+    # The "cluster ident" part of the protocol; it must be the same for all of the cluster peers and clients.
+    # It doesn't protect the cluster from malicious access but rather prevents nodes and clients from talking to the wrong cluster.
+    # E.g. this should be different for different run environments.
     secret: ""
 
-    data:
-    {
-      path: "tmp/local"
-      compact:
-      {
-        state:
-        {
-          path: "../../example/passthrough_state"
-        }
-        watch: true
-      }
-    }
-
+    # An array of the initial (seed) peers in the cluster. (required)
     peers: [
       {id: "local", url: "tcp://127.0.0.1:8047"}
     ]
 
+    # Options for the RAFT LOG and RAFT STATE data.
+    data:
+    {
+      # The root directory of the peer's RAFT data. (required)
+      path: "tmp/local"
+
+      # If the peer id should be appended to the data.path as a subdirectory.
+      appendIdToPath: false
+
+      # The file name of the RAFT state in the data.path directory.
+      raft: "raft.pers"
+      # The directory name of the RAFT log in the data.path directory.
+      log: "log"
+      # The file name of the log snapshot file.
+      snapshot: "snap"
+      # The file name of the broadcast state machine persistence.
+      state: "state.pers"
+
+      # The log compaction settings.
+      compact:
+      {
+        # The file relative to data.path which should be installed as a new log compact snapshot.
+        install: "compact/snap.new"
+        # If a watcher should be run to detect a new compact snapshot file to install.
+        watch: true # false by default
+        # Used by zr-log-compact only.
+        state:
+        {
+          # A path to the the state machine relative to the data.path. (required for zr-log-compact)
+          path: "../../example/passthrough_state"
+          # The options the state machine is initialized with by the zr-log-compact.
+          options: {}
+        }
+      }
+    }
+
+    # The peer's router options.
     router:
     {
+      # The optional address to bind the ROUTER socket to.
+      # The address should be visible as peer.url to other peers in the cluster and clients.
+      # Usefull for docker containers or virtual network addressess.
       bind: "tcp://*:8047"
     }
 
+    # The broadcast state machine settings.
     broadcast:
     {
+      # The announced url of the broadcast state machine. (required)
       url: "tcp://127.0.0.1:8048"
+      # The optional bind address of the broadcast state machine.
+      # The address should be visible as broadcast.url to other peers in the cluster and clients.
+      # Usefull for docker containers or virtual network addressess.
       bind: "tcp://*:8048"
     }
 
+    # The webmonitor settings.
     webmonitor:
     {
-      enable: true
+      # If the webmonitor should be enabled.
+      enable: true # false by default
+      # The host address of the webmonitor that browsers and other webmonitors can connect to.
+      host: "localhost"
+      # The port of the webmonitor that browsers and other webmonitors can connect to.
+      port: 8050
+      # Binding options.
+      bind: {
+        # The optional host address to bind the webmonitor to.
+        # If null the webmonitor.host will be used.
+        host: "::"
+        # The optional port address to bind the webmonitor to.
+        # If null the webmonitor.port will be used.
+        port: null
+      }
     }
 }
