@@ -140,7 +140,7 @@ readConfig(program.config, program.ns).then(config => {
           tempSnapshotPromise = tempSnapshot.ready().then(s => s.write(snapshotData, 0, snapshotData.length));
         }
         else {
-          exitError(6, "Could not determine how to create a snapshot data from the provided state machine.");
+          exitError(6, "Could not determine how to create snapshot data from the provided state machine.");
         }
       }
       else {

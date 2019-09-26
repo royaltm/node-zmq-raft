@@ -1,21 +1,21 @@
 ACID Storage
 ============
 
-* Atomic - The last sector written commits the appending or truncating operation.
+* Atomic - The last sector being written commits the updating operation.
 * Consistent - The data is consistent as long as the file system is. No additional checksums are being introduced.
 * Isolated - Only one thread is modifying files.
 * Durable - The commit is reported after `fsync`. When a new file is being created (on systems that support this), a parent directory is being fsynced. As long as the system upholds the fsync guarantees the commits are durable.
 
 
-FileLog
--------
+Log
+---
 
-The File Log consists of:
+The [FileLog](lib/server/filelog.js) consists of:
 
 - A Snapshot File.
 - An ordered collection of Index Files.
 
-The file name of each index file is a 56-bit hexadecimal number of the first LOG INDEX value that the file may begin with. ("may" not is, because the file can actually contain no entries yet).
+The file name of each index file is a 56-bit hexadecimal string of the first LOG INDEX value that the file may begin with. ("may", because the file can actually contain no entries yet).
 The file is being placed in a directory structure matching the highest 36 bits of the 56-bit INDEX LOG.
 
 For example the log file containing the first log entry with `INDEX=1` is on the following path (from the root of the RAFT log directory):
@@ -32,17 +32,15 @@ log/00001/ff/ff/00001fffffff02.rlog
 
 The snapshot's file name is by default: "snap" and is placed in the root of the RAFT log directory.
 
-See: [FileLog](lib/server/filelog.js).
-
 
 Index File
 ----------
 
-The Index File format is an extension to the token file format (see below).
+The [IndexFile](lib/common/indexfile.js) format is an extension to the Token File format (see below).
 
-The Index File consists of chunks (segments). The 1st segment's token is "RLOG" optionally followed by the "META" or more segments followed by the "ITMZ" empty segment marker followed by log entries data.
+The Index File consists of tokenized segments. The 1st segment's token is "RLOG" optionally followed by the "META" or more segments followed by the "ITMZ" empty segment marker followed by log entries data.
 
-The `RLOG` segment contains information about the first entry index, file capacity and offsets of all stored log entries:
+The `RLOG` segment contains the index of the first log entry, file capacity and offsets of all stored log entries:
 
 ```
 offs. content
@@ -104,17 +102,15 @@ The log entry offsets are always written to 4 byte aligned index table, so no si
 
 On appending, the entry data is being written first, then the offset pointing after the entry is written to the index table, thus committing the write. On rollback only offset table is being zeroed - starting from the index being rolled back to.
 
-There's an additional safety step before committing offset of the new entry to make sure the offset of the next entry (if available) is 0. If it's not 0 the offset table will be cleared first starting from the first "dirty" entry until clear entry is found or end of the table.
-
-See: [IndexFile](lib/common/indexfile.js).
+There's an additional safety step before committing offset of the new entry to make sure the offset of the next entry (if available) is 0. If it's not 0 the offset table will be cleared first starting from the first "dirty" entry until clear entry is found or the table ends.
 
 
 Snapshot File
 -------------
 
-The Snapshot File format is an extension to the Token File format (see below).
+The [SnapshotFile](lib/common/snapshotfile.js) format is an extension to the Token File format (see below).
 
-The Snapshot File consists of chunks (segments). The 1st segment's Token is "SNAP" optionally followed by the "META" or more segments followed by the "DATA" empty segment marker followed by actual snapshot data.
+The Snapshot File consists of tokenized segments. The 1st segment's Token is "SNAP" optionally followed by the "META" or more segments followed by the "DATA" empty segment marker followed by actual snapshot data.
 
 The `SNAP` segment contains information about the log entry index the snapshot is created from, the log term
 and the actual snapshot data size.
@@ -160,33 +156,130 @@ offs. content
   8 | the beginning of the snapshot data
 ```
 
-See: [SnapshotFile](lib/common/snapshotfile.js).
-
 
 Token File
 ----------
 
-1. A Token File consists of chunks (segments).
-2. Each chunk has an 8 byte header followed by random data follewed by a padding.
-3. The chunk header consists of a 4 byte identifier (a Token) followed by a 4 byte (least significant byte first) length of the data.
+1. A [TokenFile](lib/utils/tokenfile.js) consists of segments (chunks).
+2. Each chunk has an 8 byte header followed by random data follewed by padding data.
+3. The chunk header consists of a 4 byte identifier (a Token) followed by a 4 byte (least significant byte first) length of data.
 4. The padding is 0 to 3 bytes of zeroes to ensure that each chunk always starts at the byte offset
-which is a multiplication of 4.
+which is a multiple of 4.
 5. The Token is usually encoded and presented as 4 printable ASCII characters, e.g. "FORM".
-
-See: [TokenFile](lib/utils/tokenfile.js).
 
 
 State File
 ----------
 
-There are also other information being stored such as the RAFT State and the current peer configuration or the Broadcast State Machine is recording its last applied index.
+Other RAFT related data also need to be stored in an ACID storage, such as:
 
-For this purpose the [FilePersistence](lib/common/file_persistence.js) class provides a way to safely store the updated state of the persistent objects in an append/rolling fashion.
+* current term,
+* voter for,
+* cluster membership configuration and related [information](lib/server/raft_persistence.js).
 
-The data of the persistent object is being stored as Message Packed flat JSON objects with the keys only containing modified properties of the persistent object. The data is being appended to the file producing a collection of Message Packed objects. To read back the current state the full file scan is required and the last updated property overrides its previous values.
+or the last applied index of the [BroadcastStateMachine](lib/server/broadcast_state_machine.js).
+
+For this purpose the [FilePersistence](lib/common/file_persistence.js) class provides a way to safely store the updated state of the persistent data in an append+rolling fashion.
+
+The data of the persistent object is being stored as Message Packed JSON objects with the keys only containing modified properties of the persistent object. The data is being appended to the file producing a collection of Message Packed objects. To read back the current state, the full file scan is required and the last updated property overrides its previous values.
 
 When the file grows large enough (~500 kb) its being rolled by appending a suffix to the previous name and the new file is being created with the whole persistent object being saved to it.
 
-Each data appended to the file or file creation is being fsynced.
+Each write to the file or file creation is being fsynced.
 
-The files with appended suffixes, if not needed for debugging purposes, may be safely deleted.
+All files with timestamp suffixes appended to their names (e.g. "-2018-09-26-145936-8170"), if not needed for debugging purposes, may be safely deleted.
+
+
+How to use  `zr-tool`
+---------------------
+
+A tool `bin/zr-tool.js` is provided for inspecting, listing and dumping:
+
+- a log directory,
+- index files,
+- snapshot files and
+- state files.
+
+```
+bin/zr-tool.js
+
+  Usage: zr-tool [options] [command]
+
+  inspect and modify various zmq-raft file formats
+
+  Options:
+
+    -V, --version            output the version number
+    -o, --output <file>      an output file, by default the output goes to stdout
+    -s, --snapshot <path>    an alternative path to a snapshot file (FileLog) (default: snap)
+    -l, --log <path>         an alternative path to a log sub-directory (FileLog) (default: log)
+    -h, --help               output usage information
+
+  Commands:
+
+    dump|d [options] <file>  dump the content of a snapshot, state or a log index file
+    list|l [options] <path>  list the content of the log directory or a state or an index file
+    inspect|* <path>         inspect a log directory, an indexfile or a state file
+```
+
+To inspect a log directory:
+
+```
+bin/zr-tool.js /path/to/raft
+```
+
+To inspect a RAFT state file:
+
+```
+bin/zr-tool.js /path/to/raft/raft.pers
+```
+
+To inspect a snapshot file:
+
+```
+bin/zr-tool.js /path/to/raft/snap
+```
+
+To inspect a log index file:
+
+```
+bin/zr-tool.js inspect /path/to/raft/log/00000/00/00/00000000000001.rlog
+```
+
+To list index files:
+
+```
+bin/zr-tool.js list /path/to/raft
+```
+
+To dump the state file:
+
+```
+bin/zr-tool.js dump /path/to/raft/raft.pers
+```
+
+To dump the snapshot file:
+
+```
+bin/zr-tool.js dump /path/to/raft/snap
+```
+
+The data of the log entries may be extracted from the index files. The dumping process will create files for each log entry with extensions `.data` and `.meta`. The `.data` file will be a raw entry's data with the log entry header being stripped. The `.meta` file contains the header of an entry:
+
+```
+type:request id:term
+```
+
+Where the `type` is:
+
+- 0 a STATE entry,
+- 1 a CONFIGURATION entry,
+- 2 a CHECKPOINT entry.
+
+The `-m` switch will force interpreting data as Message Pack JSONs and will save each entry's data as human readable JSONs instead.
+
+```
+bin/zr-tool.js dump /path/to/raft/log/00000/00/00/00000000000001.rlog -d dest/dir -i 100:110,1000:1050 -m
+```
+
+will attempt to dump entries with indexes: 100 to 110 and 1000 to 1050 from the index file. The `dest/dir` destination directory will be created if missing.

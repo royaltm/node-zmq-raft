@@ -280,8 +280,9 @@ DEBUG=* npm run cli
 6. To get the current log information, type: `.info`.
 7. Type `.help` for more commands.
 
+### Cluster membership changes.
 
-#### Adding another peer to the cluster.
+#### Adding new peers to the cluster.
 
 1. Let's start the new peer (preferably from a new terminal window):
 
@@ -340,10 +341,10 @@ Cluster peers:
 
 The leader, if elected, will be highlighted.
 
-You can further experiment with killing peers and observing the leader election process, e.g. while flooding the cluster with updates.
+You can further experiment with killing and restarting peers and observing the leader election process, e.g. while flooding the cluster with updates.
 
 
-### Removing peer from the cluster.
+#### Removing peers from the cluster.
 
 Now to remove the peer `4` from the cluster:
 
@@ -351,4 +352,4 @@ Now to remove the peer `4` from the cluster:
 DEBUG=* bin/zr-config.js -c config/example.hjson -d tcp://127.0.0.1:8347/4
 ```
 
-After the peer has been successfully removed, if it wasn't a leader during the configuration update it will most probably become a CANDIDATE. This may happen because it wasn't updated with the final `Cnew` peer configuration. This is ok, because the other peers that are still in the cluster will ignore its voting requests. For more information on membership changes read [here](RAFT.md).
+After the peer has been successfully removed, if it wasn't a leader during the configuration update it will most probably become a CANDIDATE. It happens when the removed peer isn't updated with the final `Cnew` configuration. This is ok, because cluster members will ignore voting requests from non-member peers. For more information on membership changes read [here](RAFT.md).

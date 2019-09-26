@@ -49,9 +49,9 @@ const output = (...args) => outstrm.write(format(...args) + EOL);
 program
   .version(pkg.version)
   .description('inspect and modify various zmq-raft file formats')
-  .option('-o, --output <file>', 'file for output, by default output goes to stdout')
-  .option('-s, --snapshot <path>', 'alternative path to snapshot file (FileLog)', 'snap')
-  .option('-l, --log <path>', 'alternative path to log sub-directory (FileLog)', 'log')
+  .option('-o, --output <file>', 'an output file, by default the output goes to stdout')
+  .option('-s, --snapshot <path>', 'an alternative path to a snapshot file (FileLog)', 'snap')
+  .option('-l, --log <path>', 'an alternative path to a log sub-directory (FileLog)', 'log')
   // .option('-y, --yes', 'confirm dangerous operation')
   // .option('-j, --data <json>', 'appended data')
   // .option('-f, --from <file>', 'appended data filename')
@@ -59,20 +59,20 @@ program
   // .option('-t, --term <term>', 'raft term')
 
 program.command('dump <file>').alias('d')
-  .description('dump the content of a snapshot, state or log index file')
-  .option('-i, --index <ranges>', 'log index or index ranges to dump')
-  .option('-d, --dest <dir>', 'target directory for dumping log entries, default is CWD', '.')
+  .description('dump the content of a snapshot, state or a log index file')
+  .option('-i, --index <ranges>', 'a log index or index ranges to dump')
+  .option('-d, --dest <dir>', 'a target directory for dumping log entries, default is CWD', '.')
   .option('-U, --no-unzip', 'do not unzip when dumping snapshot')
   .option('-m, --msgpack', 'interpret snapshot/log data as msgpack and dump as JSON')
   .action((file, options) => run('dump', file, options));
 
 program.command('list <path>').alias('l')
-  .description('list the content of the log directory or state or index file')
-  .option('-i, --index <ranges>', 'log index or index ranges to list')
+  .description('list the content of the log directory or a state or an index file')
+  .option('-i, --index <ranges>', 'a log index or index ranges to list')
   .action((path, options) => run('list', path, options));
 
 program.command('inspect <path>').alias('*')
-  .description('inspect log directory, indexfile or state file')
+  .description('inspect a log directory, an indexfile or a state file')
   .action(path => run('inspect', path));
 
 program.parse(process.argv);
