@@ -81,7 +81,12 @@ raft:
       host: "localhost"
       # The port of the webmonitor that browsers and other webmonitors can connect to.
       port: 8050
+      # The protocol the webmonitor that browsers and other webmonitors can use to connect to.
+      # By default the same as webmonitor.bind.proto.
+      proto: null
       # Binding options.
+      # Except "host" "port" and "proto" all properties under bind are being passed to createServer function.
+      # The properties: "ca", "key", "cert" or "pfx" may specify a file name to read each of their values from.
       bind: {
         # The optional host address to bind the webmonitor to.
         # If null the webmonitor.host will be used.
@@ -89,6 +94,10 @@ raft:
         # The optional port address to bind the webmonitor to.
         # If null the webmonitor.port will be used.
         port: null
+        # The protocol used for the server. Supports: "http" and "https".
+        proto: "http"
+        # key: "ssl.key"
+        # cert: "ssl.crt"
       }
     }
 }
