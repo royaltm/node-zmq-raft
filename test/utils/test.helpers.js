@@ -1,5 +1,5 @@
 /* 
- *  Copyright (c) 2016-2018 Rafał Michalski <royal@yeondir.com>
+ *  Copyright (c) 2016-2019 Rafał Michalski <royal@yeondir.com>
  *  License: LGPL
  */
 "use strict";
@@ -335,5 +335,57 @@ test('validateIntegerOption', t => {
   t.throws(() => helpers.validateIntegerOption({foo: 'foo'}, 'foo'), new TypeError("options.foo must be an integer value"));
   t.throws(() => helpers.validateIntegerOption({foo: '100'}, 'foo', 101), new TypeError("options.foo must be >= 101"));
   t.throws(() => helpers.validateIntegerOption({foo: '100'}, 'foo', null, 99), new TypeError("options.foo must be <= 99"));
+  t.end();
+});
+
+test('isPowerOfTwo32', t => {
+  t.strictEquals(helpers.isPowerOfTwo32(), false);
+  t.strictEquals(helpers.isPowerOfTwo32([]), false);
+  t.strictEquals(helpers.isPowerOfTwo32({}), false);
+  t.strictEquals(helpers.isPowerOfTwo32(null), false);
+  t.strictEquals(helpers.isPowerOfTwo32(0), false);
+  t.strictEquals(helpers.isPowerOfTwo32(1), true);
+  t.strictEquals(helpers.isPowerOfTwo32(-1), false);
+  var res = [];
+  for (let v = -65536; v <= 65536; ++v) {
+    if (helpers.isPowerOfTwo32(v)) {
+      res.push(v);
+    }
+  }
+  t.strictSame(res, [1,2,4,8,16,32,64,128,256,512,1024,2048,4096,8192,16384,32768,65536]);
+  t.strictEquals(helpers.isPowerOfTwo32(16777215), false);
+  t.strictEquals(helpers.isPowerOfTwo32(16777216), true);
+  t.strictEquals(helpers.isPowerOfTwo32(16777217), false);
+  t.strictEquals(helpers.isPowerOfTwo32(2**31+1), false);
+  t.strictEquals(helpers.isPowerOfTwo32(2**31), true);
+  t.strictEquals(helpers.isPowerOfTwo32(2**31-1), false);
+  t.strictEquals(helpers.isPowerOfTwo32(2**32), true);
+  t.strictEquals(helpers.isPowerOfTwo32(2**32-1), false);
+  t.end();
+});
+
+test('nextPowerOfTwo32', t => {
+  var res = new Map();
+  t.strictEquals(helpers.nextPowerOfTwo32(), 0);
+  t.strictEquals(helpers.nextPowerOfTwo32([]), 0);
+  t.strictEquals(helpers.nextPowerOfTwo32({}), 0);
+  t.strictEquals(helpers.nextPowerOfTwo32(null), 0);
+  t.strictEquals(helpers.nextPowerOfTwo32(0), 0);
+  t.strictEquals(helpers.nextPowerOfTwo32(-1), 0);
+  t.strictEquals(helpers.nextPowerOfTwo32(1), 1);
+  t.strictEquals(helpers.nextPowerOfTwo32(2), 2);
+  t.strictEquals(helpers.nextPowerOfTwo32(3), 4);
+  t.strictEquals(helpers.nextPowerOfTwo32(4), 4);
+  for (let x = -65536; x <= 65536; ++x) {
+    let y = helpers.nextPowerOfTwo32(x);
+    res.set(y, (res.get(y)||0) + 1);
+  }
+  t.strictSame(Array.from(res.keys()), [0,1,2,4,8,16,32,64,128,256,512,1024,2048,4096,8192,16384,32768,65536]);
+  t.strictSame(Array.from(res.values()), [65537,1,1,2,4,8,16,32,64,128,256,512,1024,2048,4096,8192,16384,32768]);
+  t.strictEquals(helpers.nextPowerOfTwo32(2**31+1), 0);
+  t.strictEquals(helpers.nextPowerOfTwo32(2**31), 0x80000000);
+  t.strictEquals(helpers.nextPowerOfTwo32(2**31-1), 0x80000000);
+  t.strictEquals(helpers.nextPowerOfTwo32(2**32), 0);
+  t.strictEquals(helpers.nextPowerOfTwo32(2**32-1), 0);
   t.end();
 });
