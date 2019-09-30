@@ -1,5 +1,5 @@
 /* 
- *  Copyright (c) 2017 Rafał Michalski <royal@yeondir.com>
+ *  Copyright (c) 2017-2019 Rafał Michalski <royal@yeondir.com>
  *  License: LGPL
  */
 "use strict";
@@ -44,6 +44,7 @@ test('FileLog', suite => {
     t.plan(85);
     log = new FileLog(path.join(tempDir, 'log'), path.join(tempDir, 'snap'));
     t.type(log, FileLog);
+    t.strictEquals(log.requestIdTtl, raft.common.constants.DEFAULT_REQUEST_ID_TTL);
     return log.ready()
     .then(filelog => {
       t.strictEquals(filelog, log);
@@ -51,6 +52,7 @@ test('FileLog', suite => {
       t.strictEquals(log.firstIndex, 1);
       t.strictEquals(log.lastIndex, 0);
       t.strictEquals(log.lastTerm, 0);
+      t.strictEquals(log.indexFileCapacity, DEFAULT_CAPACITY);
       t.strictEquals(log.snapshot.logIndex, 0);
       t.strictEquals(log.snapshot.logTerm, 0);
       t.strictEquals(log.getFirstFreshIndex(), undefined);
@@ -212,6 +214,7 @@ test('FileLog', suite => {
     t.plan(18 + TOTAL_ENTRIES*4 + 11);
     log = new FileLog(path.join(tempDir, 'log'), path.join(tempDir, 'snap'));
     t.type(log, FileLog);
+    t.strictEquals(log.requestIdTtl, raft.common.constants.DEFAULT_REQUEST_ID_TTL);
     return log.ready()
     .then(filelog => {
       t.strictEquals(filelog, log);
@@ -219,6 +222,7 @@ test('FileLog', suite => {
       t.strictEquals(log.firstIndex, 1);
       t.strictEquals(log.lastIndex, 8);
       t.strictEquals(log.lastTerm, 44);
+      t.strictEquals(log.indexFileCapacity, DEFAULT_CAPACITY);
       t.strictEquals(log.snapshot.logIndex, 0);
       t.strictEquals(log.snapshot.logTerm, 0);
       t.strictEquals(log.snapshot.dataSize, 0);
@@ -287,6 +291,7 @@ test('FileLog', suite => {
     t.plan(10 + 67 + 70 + 7 + 18);
     log = new FileLog(path.join(tempDir, 'log'), path.join(tempDir, 'snap'));
     t.type(log, FileLog);
+    t.strictEquals(log.requestIdTtl, raft.common.constants.DEFAULT_REQUEST_ID_TTL);
     return log.ready()
     .then(filelog => {
       t.strictEquals(filelog, log);
@@ -294,6 +299,7 @@ test('FileLog', suite => {
       t.strictEquals(log.firstIndex, TOTAL_ENTRIES+1);
       t.strictEquals(log.lastIndex, TOTAL_ENTRIES);
       t.strictEquals(log.lastTerm, 1111);
+      t.strictEquals(log.indexFileCapacity, DEFAULT_CAPACITY);
       t.strictEquals(log.snapshot.logIndex, TOTAL_ENTRIES);
       t.strictEquals(log.snapshot.logTerm, 1111);
       t.strictEquals(log.snapshot.dataSize, 0);

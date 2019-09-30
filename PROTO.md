@@ -385,7 +385,7 @@ optional:
 
 Once the response's update status is `false`, but the 3rd frame is included, the client should follow the "broken known leader state" recovery procedure.
 
-Once the response's update status is `false` and the 3rd frame is missing, response indicates that a request has expired: a `reqid` is older than REQUEST_UPDATE_TTL (default: 8 hours). This response is final and in this instance the client should indicate a failure to the requesting party.
+Once the response's update status is `false` and the 3rd frame is missing, response indicates that a request has expired: a `reqid` is older than REQUEST_ID_TTL (default: 8 hours). This response is final and in this instance the client should indicate a failure to the requesting party.
 
 If the update status is `true` but there is no 3rd frame in the response it indicates that the update was accepted but the log entry hasn't been committed yet. The response message in this form may be sent several times by the server peer and each time it's being received, the client should reset its RPC timeout clock.
 
@@ -435,7 +435,7 @@ If the new configuration data format is wrong or there are conflicts of PEER_ID-
 
 If the cluster configuration is currently transitional (e.g. the previous configuration update is still in progress), the response's status will be 3. In this instance the client should repeat its request after some reasonable time interval (e.g. a few seconds).
 
-The response's status = 4 indicates that a request has expired: a `reqid` is older than REQUEST_UPDATE_TTL (default: 8 hours). This response is final and in this instance the client should indicate a failure to the requesting party.
+The response's status = 4 indicates that a request has expired: a `reqid` is older than REQUEST_ID_TTL (default: 8 hours). This response is final and in this instance the client should indicate a failure to the requesting party.
 
 Once the response's status is 0 the client should follow the "broken known leader state" recovery procedure.
 

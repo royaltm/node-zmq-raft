@@ -8,8 +8,8 @@ const test = require('tap').test;
 const raft = require('../..');
 const { LogEntry
       , UpdateRequest
-      , hasRequestExpired
-      , checkRequestSanity
+      , makeHasRequestExpired
+      , makeCheckRequestSanity
       , readers
       , mixinReaders
       , LOG_ENTRY_HEADER_SIZE } = raft.common.LogEntry;
@@ -18,8 +18,8 @@ test('should have functions and properties', t => {
   t.strictEquals(LOG_ENTRY_HEADER_SIZE, 20);
   t.type(LogEntry               , 'function');
   t.type(UpdateRequest          , 'function');
-  t.type(hasRequestExpired      , 'function');
-  t.type(checkRequestSanity     , 'function');
+  t.type(makeHasRequestExpired  , 'function');
+  t.type(makeCheckRequestSanity , 'function');
   t.type(readers.readTypeOf     , 'function');
   t.type(readers.readTermOf     , 'function');
   t.type(readers.readRequestIdOf, 'function');
@@ -38,7 +38,9 @@ test('readers', t => {
   t.end();
 });
 
-test('hasRequestExpired', t => {
+test('makeHasRequestExpired', t => {
+  const { DEFAULT_REQUEST_ID_TTL } = raft.common.constants;
+  const hasRequestExpired = makeHasRequestExpired(DEFAULT_REQUEST_ID_TTL);
   var req = Buffer.alloc(12);
   t.strictEquals(hasRequestExpired(req), true);
   t.strictEquals(hasRequestExpired('000000000000000000000000'), true);
@@ -47,24 +49,28 @@ test('hasRequestExpired', t => {
   t.strictEquals(hasRequestExpired(Buffer.from('ffffffffffffffffffffffff000000000000000000000000','hex'), 12), true);
   t.strictEquals(hasRequestExpired(raft.utils.id.genIdent('buffer')), false);
   t.strictEquals(hasRequestExpired(raft.utils.id.genIdent()), false);
-  req.writeUInt32BE((Date.now() - raft.common.constants.REQUEST_UPDATE_TTL + 2000) / 1000 >>> 0, 0);
+  req.writeUInt32BE((Date.now() - DEFAULT_REQUEST_ID_TTL + 2000) / 1000 >>> 0, 0);
   t.strictEquals(hasRequestExpired(req), false);
-  req.writeUInt32BE((Date.now() - raft.common.constants.REQUEST_UPDATE_TTL) / 1000 >>> 0, 0);
+  req.writeUInt32BE((Date.now() - DEFAULT_REQUEST_ID_TTL) / 1000 >>> 0, 0);
   t.strictEquals(hasRequestExpired(req), true);
   t.end();
 });
 
-test('checkRequestSanity', t => {
+test('makeCheckRequestSanity', t => {
+  const { DEFAULT_REQUEST_ID_TTL, REQUEST_ID_TTL_ACCEPT_MARGIN } = raft.common.constants;
+  const REQUEST_ID_IN_PAST_DELTA_MAX = DEFAULT_REQUEST_ID_TTL - REQUEST_ID_TTL_ACCEPT_MARGIN;
+  const REQUEST_ID_IN_FUTURE_DELTA_MAX = REQUEST_ID_TTL_ACCEPT_MARGIN;
+  const checkRequestSanity = makeCheckRequestSanity(DEFAULT_REQUEST_ID_TTL, REQUEST_ID_TTL_ACCEPT_MARGIN, REQUEST_ID_TTL_ACCEPT_MARGIN);
   var req = Buffer.alloc(12);
   t.strictEquals(checkRequestSanity(req), -1);
   t.strictEquals(checkRequestSanity('000000000000000000000000'), -1);
   t.strictEquals(checkRequestSanity(raft.utils.id.genIdent('buffer')), 0);
   t.strictEquals(checkRequestSanity(raft.utils.id.genIdent()), 0);
-  req.writeUInt32BE((Date.now() - raft.common.constants.REQUEST_UPDATE_IN_PAST_DELTA_MAX + 2000) / 1000 >>> 0, 0);
+  req.writeUInt32BE((Date.now() - REQUEST_ID_IN_PAST_DELTA_MAX + 2000) / 1000 >>> 0, 0);
   t.strictEquals(checkRequestSanity(req), 0);
-  req.writeUInt32BE((Date.now() - raft.common.constants.REQUEST_UPDATE_IN_PAST_DELTA_MAX) / 1000 >>> 0, 0);
+  req.writeUInt32BE((Date.now() - REQUEST_ID_IN_PAST_DELTA_MAX) / 1000 >>> 0, 0);
   t.strictEquals(checkRequestSanity(req), -1);
-  req.writeUInt32BE((Date.now() + raft.common.constants.REQUEST_UPDATE_IN_FUTURE_DELTA_MAX + 2000) / 1000 >>> 0, 0);
+  req.writeUInt32BE((Date.now() + REQUEST_ID_IN_FUTURE_DELTA_MAX + 2000) / 1000 >>> 0, 0);
   t.strictEquals(checkRequestSanity(req), 1);
   t.end();
 });
@@ -111,8 +117,6 @@ test('LogEntry', t => {
   t.strictEquals(entry.isStateEntry, false);
   t.strictEquals(entry.isConfigEntry, true);
   t.strictEquals(entry.isCheckpointEntry, false);
-  t.strictEquals(entry.hasRequestExpired, true);
-  t.strictEquals(entry.checkRequestSanity, -1);
   t.type(entry.requestId, Buffer);
   t.strictEquals(entry.requestId.length, 12);
   t.deepEquals(entry.requestId, entry.readRequestId());
