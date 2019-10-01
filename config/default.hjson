@@ -70,6 +70,8 @@ raft:
       # The address should be visible as broadcast.url to other peers in the cluster and clients.
       # Usefull for docker containers or virtual network addressess.
       bind: "tcp://*:8048"
+      # BroadcastStateMachine options:
+      broadcastHeartbeatInterval: 500
     }
 
     # The webmonitor settings.
