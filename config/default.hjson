@@ -100,4 +100,24 @@ raft:
         # cert: "ssl.crt"
       }
     }
+
+    # FileLog options:
+    requestIdTtl: 28800000
+    indexFileCapacity: 16384
+
+    # ZmqRaft options:
+    electionTimeoutMin: 200
+    electionTimeoutMax: 300
+    maxLogEntryDataSize: 10485760
+    peerMsgDataSize: 65536
+    rpcTimeout: 50
+    appendEntriesHeartbeatInterval: 70
+    appendEntriesRpcTimeoutMin: 70
+    appendEntriesRpcTimeoutMax: 140
+    requestEntriesHighWatermak: 8000
+    requestEntriesTtl: 5000
+    requestEntriesPipelines: 5
+    requestEntriesEntrySizeLimitPipeline: 65536
+    requestEntriesSnapshotPipelines: 2
+    requestIdTtlAcceptMargin: 900000
 }
