@@ -41,7 +41,7 @@ test('FileLog', suite => {
   var log, reqestKey0, reqestKey1, logentries, digest;
 
   suite.test('should create FileLog', t => {
-    t.plan(85);
+    t.plan(87);
     log = new FileLog(path.join(tempDir, 'log'), path.join(tempDir, 'snap'));
     t.type(log, FileLog);
     t.strictEquals(log.requestIdTtl, raft.common.constants.DEFAULT_REQUEST_ID_TTL);
@@ -211,7 +211,7 @@ test('FileLog', suite => {
   });
 
   suite.test('should open FileLog', t => {
-    t.plan(18 + TOTAL_ENTRIES*4 + 11);
+    t.plan(20 + TOTAL_ENTRIES*4 + 11);
     log = new FileLog(path.join(tempDir, 'log'), path.join(tempDir, 'snap'));
     t.type(log, FileLog);
     t.strictEquals(log.requestIdTtl, raft.common.constants.DEFAULT_REQUEST_ID_TTL);
@@ -288,7 +288,7 @@ test('FileLog', suite => {
   });
 
   suite.test('should replace FileLog', t => {
-    t.plan(10 + 67 + 70 + 7 + 18);
+    t.plan(12 + 67 + 70 + 7 + 18);
     log = new FileLog(path.join(tempDir, 'log'), path.join(tempDir, 'snap'));
     t.type(log, FileLog);
     t.strictEquals(log.requestIdTtl, raft.common.constants.DEFAULT_REQUEST_ID_TTL);
