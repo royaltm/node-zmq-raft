@@ -1,7 +1,7 @@
 {
   "name": "zmq-raft",
   "version": "0.1.4",
-  "description": "Opinionated Raft implementation powered by ØMQ",
+  "description": "An opinionated Raft implementation powered by ØMQ",
   "main": "index.js",
   "bin": {
     "zmq-raft": "./bin/zmq-raft.js",
