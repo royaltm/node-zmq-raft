@@ -314,9 +314,9 @@ test('createOptionsFactory', t => {
   t.notStrictEquals(options.foo, defaultOpts.foo);
   t.notStrictEquals(options.foo.bar, defaultOpts.foo.bar);
   t.deepEquals(createOptions({foo: {}}), defaultOpts);
-  t.deepEquals(createOptions({foo: 1}), defaultOpts);
+  t.throws(() => createOptions({foo: 1}), new TypeError('Expected a namespace: "foo"'));
   t.deepEquals(createOptions({foo: {bar: {}}}), defaultOpts);
-  t.deepEquals(createOptions({foo: {bar: ''}}), defaultOpts);
+  t.throws(() => createOptions({foo: {bar: ''}}), new TypeError('Expected a namespace: "bar"'));
   options = {xxx: 123, foo: {bar: {baz: -1}}};
   t.notStrictEquals(createOptions(options), options);
   t.notStrictEquals(createOptions(options).foo, options.foo);
