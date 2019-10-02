@@ -199,7 +199,7 @@ raft.server.build({
 }).then(zmqRaft => { /* ... */ });
 ```
 
-To provide custom state machine override `factory.state` function in `raft.server.build` options:
+To provide a custom state machine override `factory.state` function in `raft.server.build` options:
 
 ```js
 raft.server.build({
@@ -210,8 +210,8 @@ raft.server.build({
 })
 ```
 
-Provide your own listeners for events on the raft instance instead of the default ones or disable them:
-The listeners are attached early just after `ZmqRaft` is initialized.
+Provide your own listeners for events on the `ZmqRaft` instance instead of the default ones or disable them:
+The listeners are attached early just after `ZmqRaft` is being initialized.
 
 ```js
 raft.server.build({
