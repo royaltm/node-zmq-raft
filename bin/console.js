@@ -15,6 +15,8 @@ const util = require('util');
 const crypto = require('crypto');
 const { createUnzip } = require('zlib');
 
+const defaultConfig = path.join(__dirname, '..', 'config', 'console.hjson');
+
 const debug = require('debug')('zmq-raft:console');
 
 const isArray = Array.isArray;
@@ -43,6 +45,8 @@ const { listPeers
       , prompt
       , replError } = require('../lib/utils/repl_helpers');
 
+const { readConfig } = require('../lib/utils/config');
+
 const argv = process.argv.slice(2);
 
 const motd = util.format("%s REPL, welcome!", pkg.name);
@@ -61,7 +65,8 @@ function getClient() {
   return subs ? subs.client : client;
 }
 
-createRepl().then(repl => {
+readConfig(argv[0] || defaultConfig, "raft")
+.then(config => createRepl().then(repl => {
   repl.on('reset', initializeContext);
   repl.on('exitsafe', () => {
     console.log('Received "exit" event from repl!');
@@ -91,8 +96,14 @@ createRepl().then(repl => {
     help: 'Connect client to zmq-raft servers: host[:port] [host...]',
     action: function(hosts) {
       lookup(hosts.split(/\s+/)).then(urls => {
+        subs && subs.close();
         client && client.close();
-        client = new ZmqRaftClient(urls, {heartbeat: 5000, secret: repl.context.secret});
+        const opts = Object.assign({ heartbeat: 5000 },
+          config.console.client,
+        {
+          secret: repl.context.secret
+        });
+        client = new ZmqRaftClient(urls, opts);
         repl.context.client = client;
         console.log('connecting to: %s', urls.join(', '));
       })
@@ -105,7 +116,14 @@ createRepl().then(repl => {
       lookup(hosts.split(/\s+/)).then(urls => {
         subs && subs.close();
         client && client.close();
-        subs = new ZmqRaftSubscriber(urls, {secret: repl.context.secret});
+        const opts = Object.assign({},
+          config.console.client,
+          config.console.subscriber,
+        {
+          secret: repl.context.secret,
+          heartbeat: 0
+        });
+        subs = new ZmqRaftSubscriber(urls, opts);
         repl.context.client = subs.client;
         repl.context.subs = subs;
         console.log('connecting to: %s', urls.join(', '));
@@ -363,7 +381,7 @@ createRepl().then(repl => {
     , ben
     , pkg
     , lookup
-    , secret: ""
+    , secret: config.secret
     , entries: {decode: buf => buf.length, logIndex: 0, decompress: true}
     , genId: genIdent
     , flood: {iteration: 0, flooding: false, data: crypto.randomBytes(6).toString('base64')}
@@ -374,7 +392,7 @@ createRepl().then(repl => {
     return replError(repl, err);
   }
 
-}).catch(err => console.warn(err.stack));
+})).catch(err => console.warn(err.stack));
 
 function floodingNextFactory(enc, flood) {
   return function() {

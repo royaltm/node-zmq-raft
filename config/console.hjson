@@ -1,0 +1,37 @@
+raft:
+{
+  # The default "cluster ident" part of the protocol.
+  secret: ""
+
+  # bin/console.js
+  console:
+  {
+    client:
+    {
+      # ZMQ_SNDHWM for zmq_setsockopt
+      # http://api.zeromq.org/4-0:zmq-setsockopt#toc3
+      highwatermark: 2
+      # Raft peer response timeout in milliseconds.
+      timeout: 500
+      # In case of the pending election, clients should wait this long, for the new leader
+      # to be elected before querying the cluster again (in milliseconds).
+      serverElectionGraceDelay: 300
+      # How often, in milliseconds, to update the cluster peer configuration via Request Config RPC.
+      # Pass 0 to turn it off.
+      heartbeat: 5000
+    }
+
+    subscriber:
+    {
+      # The timeout in milliseconds for the BroadcastStateMachine heartbeats.
+      broadcastTimeout: 1000
+
+      # Options are merged with client options (except heartbeat, which does not apply here)
+      # You may override any of the following client options:
+
+      # highwatermark: 2
+      # timeout: 500
+      # serverElectionGraceDelay: 300
+    }
+  }
+}
