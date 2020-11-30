@@ -105,6 +105,7 @@ raft:
 
     # FileLog options:
     requestIdTtl: 28800000
+    requestIdCacheMax: null
     indexFileCapacity: 16384
 
     # ZmqRaft options:
@@ -128,8 +129,8 @@ raft:
     # Partitioned peers will eventually timeout and start new election terms.
     # They will repeat this process again and again until they eventually are re-connected
     # with the rest of the cluster.
-    # The following option, when `true`, prevents this from happening.
+    # The following option, when true, prevents this from happening.
     # Drawbacks: may slightly prolong the election process.
-    # Not recommended for clusters with long election timeouts (e.g on low throughput networks).
+    # Not recommended for clusters with long election timeouts (e.g on slow networks).
     preventSpiralElections: true
 }

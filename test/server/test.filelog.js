@@ -40,6 +40,14 @@ test('FileLog', suite => {
 
   var log, reqestKey0, reqestKey1, logentries, digest;
 
+  suite.test('should not create a FileLog', t => {
+    t.plan(1);
+    t.throws(() =>
+      new FileLog(path.join(tempDir, 'log'), path.join(tempDir, 'snap'), {
+                        requestIdTtl: null, requestIdCacheMax: null}),
+      new Error("FileLog: options requestIdTtl and requestIdCacheMax must not be null at the same time"));
+  });
+
   suite.test('should create FileLog', t => {
     t.plan(87);
     log = new FileLog(path.join(tempDir, 'log'), path.join(tempDir, 'snap'));
