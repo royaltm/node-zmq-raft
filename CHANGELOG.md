@@ -1,4 +1,4 @@
-0.2.2
+0.3.0
 
 * bin/console.js: external config facility.
 * ZmqRaftMonitor: an utility introduced in the "utils.monitor" namespace.
