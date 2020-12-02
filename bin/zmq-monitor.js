@@ -3,18 +3,15 @@
 
 if (require.main !== module) throw new Error("zmq-monitor.js must be run directly from node");
 
-const path = require('path');
-const parseUrl = require('url').parse;
 const { format } = require('util');
 
-const { cyan, green, grey, magenta, red, yellow, bgGreen } = require('colors/safe');
+const { red, bgGreen } = require('colors/safe');
 
 const program = require('commander')
     , debug = require('debug')('zmq-monitor');
 
 const raft = require('..');
-const { lpad
-      , validateIntegerOption } = raft.utils.helpers;
+const { lpad } = raft.utils.helpers;
 
 program
   .version('1.0.0')
@@ -27,7 +24,7 @@ program
 
 if (program.args.length === 0) {
   console.error("zmq-monitor: please provide at least one cluster seed url")
-  process.exit(1);
+  program.help();
 }
 
 const options = {
@@ -64,7 +61,7 @@ try {
 }
 catch(err) {
   console.error("zmq-monitor: %s", err)
-  process.exit(1);  
+  process.exit(1);
 }
 
 const mon = new raft.utils.monitor.ZmqRaftMonitor(options);
@@ -72,9 +69,9 @@ const peerInfo = new Map();
 
 mon
 .on('peers', (peers, leaderId) => {
-  console.log('leaderId: %s', leaderId);
+  debug('leaderId: %s', leaderId);
   for(let id in peers) {
-    console.log('%s: %s', id, peers[id]);
+    debug('%s: %s', id, peers[id]);
     peerInfo.set(id, {
       id,
       url: peers[id],
