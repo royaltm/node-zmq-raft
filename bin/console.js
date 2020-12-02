@@ -96,8 +96,7 @@ readConfig(argv[0] || defaultConfig, "raft")
     help: 'Connect client to zmq-raft servers: host[:port] [host...]',
     action: function(hosts) {
       lookup(hosts.split(/\s+/)).then(urls => {
-        subs && subs.close();
-        client && client.close();
+        shutdownClients();
         const opts = Object.assign({ heartbeat: 5000 },
           config.console.client,
         {
@@ -114,8 +113,7 @@ readConfig(argv[0] || defaultConfig, "raft")
     help: 'Subscribe to zmq-raft broadcast state servers: host[:port] [host...]',
     action: function(hosts) {
       lookup(hosts.split(/\s+/)).then(urls => {
-        subs && subs.close();
-        client && client.close();
+        shutdownClients();
         const opts = Object.assign({},
           config.console.client,
           config.console.subscriber,
@@ -157,11 +155,7 @@ readConfig(argv[0] || defaultConfig, "raft")
   repl.defineCommand('close', {
     help: 'Close current connection or subscription',
     action: function(hosts) {
-      subs && subs.close();
-      client && client.close();
-      repl.context.client = undefined;
-      repl.context.subs = undefined;
-      repl.context.flood.flooding = false;
+      shutdownClients();
       console.log('closed');
       prompt(repl);
     }
@@ -365,6 +359,14 @@ readConfig(argv[0] || defaultConfig, "raft")
     return defaultWriter.apply(repl, arguments);
   };
 
+  function shutdownClients() {
+    subs && subs.close();
+    client && client.close();
+    repl.context.subs = subs = undefined;
+    repl.context.client = client = undefined;
+    repl.context.flood.flooding = false;
+  }
+
   process.on('unhandledRejection', (error, promise) => {
     console.log('\n' + red('Promise rejected with: ') + '%s', error);
     if (error.stack) console.warn(error.stack);
@@ -385,6 +387,7 @@ readConfig(argv[0] || defaultConfig, "raft")
     , entries: {decode: buf => buf.length, logIndex: 0, decompress: true}
     , genId: genIdent
     , flood: {iteration: 0, flooding: false, data: crypto.randomBytes(6).toString('base64')}
+    , config: config.console
     });
   }
 
