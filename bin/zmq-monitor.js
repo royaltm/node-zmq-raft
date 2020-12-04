@@ -5,7 +5,7 @@ if (require.main !== module) throw new Error("zmq-monitor.js must be run directl
 
 const { format } = require('util');
 
-const { red, bgGreen } = require('colors/safe');
+const { red, bgGreen, grey } = require('colors/safe');
 
 const program = require('commander')
     , debug = require('debug')('zmq-monitor');
@@ -17,6 +17,7 @@ program
   .version('1.0.0')
   .usage('[options] url...')
   .description('start zmq-monitor using provided options and url seeds')
+  .option('-u, --urls-only', 'Monitor only given urls')
   .option('-k, --cluster <secret>', 'Secret cluster identity part of the protocol', '')
   .option('-i, --interval <secs>', 'How often peers should be queried (in seconds)')
   .option('-t, --timeout <secs>', 'How long to wait for a peer to respond (in seconds)')
@@ -33,6 +34,10 @@ const options = {
     secret: program.cluster,
     urls: program.args
 };
+
+if (program.urlsOnly) {
+  options.urlsOnly = true;
+}
 
 try {
   function validateSeconds(name, min) {
@@ -94,7 +99,7 @@ mon
 .on('close', () => debug('closed'))
 
 function fval(value, size, padder) {
-  value = (value == null) ? '?' : '' + value;
+  value = (value == null) ? '-' : '' + value;
   return lpad('' + value, size, padder);
 }
 
@@ -123,7 +128,10 @@ function printAll() {
   for(let {id, url, info} of peerInfo.values()) {
     let line = format('%s: %s %s',
                           fval(id, 10, ' '),
-                          info.err ? 'X' : (info.isLeader ? 'M' : 'F'),
+                          (info.err ? 'X'
+                                    : (info.isLeader ? 'M'
+                                                     : (info.isLeader == null ? '?'
+                                                                              : 'F'))),
                           fval(info.currentTerm, 8, ' '),
                           fval(info.commitIndex, 8, ' '),
                           fval(info.lastIndex, 8, ' '),
@@ -135,6 +143,9 @@ function printAll() {
     }
     else if (info.isLeader) {
       console.log(bgGreen(line));
+    }
+    else if (info.isLeader == null) {
+      console.log(grey(line));
     }
     else {
       console.log(line);
