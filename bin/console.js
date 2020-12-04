@@ -34,6 +34,7 @@ const lookup = require('../lib/utils/dns_lookup').hostsToZmqUrls;
 
 const { genIdent } = require('../lib/utils/id');
 const { createRepl } = require('../lib/utils/repl');
+const ZmqRaftPeerClient = require('../lib/client/zmq_raft_peer_client');
 const ZmqRaftClient = require('../lib/client/zmq_raft_client');
 const ZmqRaftSubscriber = require('../lib/client/zmq_raft_subscriber');
 const { LOG_ENTRY_TYPE_STATE, LOG_ENTRY_TYPE_CONFIG, LOG_ENTRY_TYPE_CHECKPOINT
@@ -92,8 +93,36 @@ readConfig(argv[0] || defaultConfig, "raft")
       prompt(repl);
     }
   });
+  repl.defineCommand('cpeer', {
+    help: 'Connect to a single zmq-raft peer: host[:port]',
+    action: function(host) {
+      if (!host) {
+        if (client) {
+          console.log("currently connected to:");
+          client.urls.forEach(url => console.log(" - %s", grey(url)));
+        }
+        else {
+          console.log(yellow("not connected"));
+        }
+        prompt(repl)
+      }
+      else {
+        lookup(host).then(urls => {
+          shutdownClients();
+          const opts = Object.assign({}, config.console.client,
+          {
+            secret: repl.context.secret
+          });
+          client = new ZmqRaftPeerClient(urls[0], opts);
+          repl.context.client = client;
+          console.log('connecting to peer: %s', urls[0]);
+        })
+        .then(() => prompt(repl)).catch(error);
+      }
+    }
+  });
   repl.defineCommand('connect', {
-    help: 'Connect client to zmq-raft servers: host[:port] [host...]',
+    help: 'Connect a client to zmq-raft servers: host[:port] [host...]',
     action: function(hosts) {
       lookup(hosts.split(/\s+/)).then(urls => {
         shutdownClients();
