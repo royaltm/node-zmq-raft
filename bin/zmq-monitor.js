@@ -17,6 +17,7 @@ program
   .version('1.0.0')
   .usage('[options] url...')
   .description('start zmq-monitor using provided options and url seeds')
+  .option('-p, --peers <ids...>', 'Assume given urls are peers with given IDs (no config query)')
   .option('-u, --urls-only', 'Monitor only given urls')
   .option('-k, --cluster <secret>', 'Secret cluster identity part of the protocol', '')
   .option('-i, --interval <secs>', 'How often peers should be queried (in seconds)')
@@ -37,6 +38,17 @@ const options = {
 
 if (program.urlsOnly) {
   options.urlsOnly = true;
+}
+
+if (program.peers) {
+  const ids = program.peers
+      , urls = options.urls;
+
+  if (ids.length !== urls.length) {
+    console.error("zmq-monitor: the number of given peer IDs should match the number of given URLs");
+    program.help();
+  }
+  options.peers = options.urls.map((url, i) => [ids[i], url]);
 }
 
 try {
