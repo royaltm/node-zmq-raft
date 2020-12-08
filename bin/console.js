@@ -3,7 +3,7 @@
 /*
  * BIN console
  *
- * Author: Rafal Michalski (c) 2017-2018
+ * Author: Rafal Michalski (c) 2017-2020
  */
 
 const assert = require('assert');
@@ -34,6 +34,8 @@ const lookup = require('../lib/utils/dns_lookup').hostsToZmqUrls;
 
 const { genIdent } = require('../lib/utils/id');
 const { createRepl } = require('../lib/utils/repl');
+const ZmqRaftPeerClient = require('../lib/client/zmq_raft_peer_client');
+const ZmqRaftPeerSub = require('../lib/client/zmq_raft_peer_sub');
 const ZmqRaftClient = require('../lib/client/zmq_raft_client');
 const ZmqRaftSubscriber = require('../lib/client/zmq_raft_subscriber');
 const { LOG_ENTRY_TYPE_STATE, LOG_ENTRY_TYPE_CONFIG, LOG_ENTRY_TYPE_CHECKPOINT
@@ -92,8 +94,88 @@ readConfig(argv[0] || defaultConfig, "raft")
       prompt(repl);
     }
   });
+  repl.defineCommand('cpeer', {
+    help: 'Connect to a single zmq-raft peer: host[:port]',
+    action: function(host) {
+      if (!host) {
+        if (client) {
+          console.log("currently connected to:");
+          client.urls.forEach(url => console.log(" - %s", grey(url)));
+        }
+        else {
+          console.log(yellow("not connected"));
+        }
+        prompt(repl)
+      }
+      else {
+        lookup(host).then(urls => {
+          shutdownClients();
+          const opts = Object.assign({}, config.console.client,
+          {
+            secret: repl.context.secret
+          });
+          client = new ZmqRaftPeerClient(urls[0], opts);
+          repl.context.client = client;
+          console.log('connecting to peer: %s', urls[0]);
+        })
+        .then(() => prompt(repl)).catch(error);
+      }
+    }
+  });
+  repl.defineCommand('subp', {
+    help: 'Subscribe to a single broadcast state peer: [host[:port]|lastIndex]',
+    action: function(host) {
+      if (!host || /^\d+$/.test(host)) {
+        if (client && client.foreverEntriesStream) {
+          if (subs && !subs.destroyed) {
+            subs.destroy();
+          }
+          let lastIndex = parseInt(host);
+          if (!Number.isFinite(lastIndex)) {
+            lastIndex = config.console.subscriber.lastIndex;
+          }
+          subs = client.foreverEntriesStream(lastIndex);
+          repl.context.subs = subs;
+          subs.on('end', () => {
+            console.log(cyan("forever stream ends, peer is not a LEADER"))
+          });
+          subs.on('close', () => {
+            console.log(red("forever stream closed"));
+          });
+          subs.on('data', showSubStreamEntry);
+          subs.on('error', error);
+        }
+        else {
+          console.log(yellow("subscribe to a peer first"));
+        }
+        prompt(repl)
+      }
+      else {
+        lookup(host).then(urls => {
+          shutdownClients();
+          const opts = Object.assign({},
+            config.console.client,
+            config.console.subscriber,
+          {
+            secret: repl.context.secret,
+          });
+          client = new ZmqRaftPeerSub(urls, opts);
+          repl.context.client = client;
+          console.log('subscribing to peer: %s', urls[0]);
+          client.on('error', error);
+          client.on('pub', url => console.log("PUB url: %s", green(url)));
+          // client.on('pulse', (ix, term, entries) => {
+          //   console.log(red("(( ))") + grey(" index: %s, term: %s, entries: %s"), ix, term, entries.length);
+          // });
+          client.on('timeout', () => console.log(red("(X) BSM timeout!")));
+          client.on('close', () => console.log(grey("peer subscriber closed")));
+        })
+        .then(() => prompt(repl)).catch(error);
+      }
+    }
+  });
   repl.defineCommand('connect', {
-    help: 'Connect client to zmq-raft servers: host[:port] [host...]',
+    help: 'Connect a client to zmq-raft servers: host[:port] [host...]',
     action: function(hosts) {
       lookup(hosts.split(/\s+/)).then(urls => {
         shutdownClients();
@@ -124,30 +206,9 @@ readConfig(argv[0] || defaultConfig, "raft")
         subs = new ZmqRaftSubscriber(urls, opts);
         repl.context.client = subs.client;
         repl.context.subs = subs;
-        console.log('connecting to: %s', urls.join(', '));
+        console.log('subscribing to: %s', urls.join(', '));
         subs.on('error', error);
-        subs.on('data', entry => {
-          var logIndex = repl.context.entries.logIndex = entry.logIndex
-            , decode = repl.context.entries.decode;
-          if (entry.isLogEntry) {
-            switch(entry.entryType) {
-            case LOG_ENTRY_TYPE_STATE:
-              console.log('subscriber index: %s term: %s data: %j', logIndex, entry.readEntryTerm(), decode(entry.readEntryData()));
-              break;
-            case LOG_ENTRY_TYPE_CONFIG:
-              console.log('subscriber index: %s term: %s config', logIndex, entry.readEntryTerm());
-              break;
-            case LOG_ENTRY_TYPE_CHECKPOINT:
-              console.log('subscriber index: %s term: %s checkpoint', logIndex, entry.readEntryTerm());
-              break;
-            }
-          } else {
-            console.log('snapshot chunk offset: %s of %s (%s bytes)', entry.snapshotByteOffset, entry.snapshotTotalLength, entry.length);
-            if (entry.isLastChunk) {
-              console.log('snapshot done, logIndex %s logTerm %s', entry.logIndex, entry.logTerm);
-            }
-          }
-        });
+        subs.on('data', showSubStreamEntry);
       })
       .then(() => prompt(repl)).catch(error);
     }
@@ -166,7 +227,7 @@ readConfig(argv[0] || defaultConfig, "raft")
       const flood = repl.context.flood;
       if (data) flood.data = data;
       if (!flood.flooding) {
-        if (subs) startFloodingStream(repl, subs);
+        if (subs && subs.write) startFloodingStream(repl, subs);
         else if (client) startFloodingClient(repl, client);
         else console.log(yellow('not connected'));
       }
@@ -360,8 +421,8 @@ readConfig(argv[0] || defaultConfig, "raft")
   };
 
   function shutdownClients() {
-    subs && subs.close();
-    client && client.close();
+    if (subs && subs.close) subs.close();
+    if (client && client.close) client.close();
     repl.context.subs = subs = undefined;
     repl.context.client = client = undefined;
     repl.context.flood.flooding = false;
@@ -395,6 +456,28 @@ readConfig(argv[0] || defaultConfig, "raft")
     return replError(repl, err);
   }
 
+  function showSubStreamEntry(entry) {
+    var logIndex = repl.context.entries.logIndex = entry.logIndex
+      , decode = repl.context.entries.decode;
+    if (entry.isLogEntry) {
+      switch(entry.entryType) {
+      case LOG_ENTRY_TYPE_STATE:
+        console.log('subscriber index: %s term: %s data: %j', logIndex, entry.readEntryTerm(), decode(entry.readEntryData()));
+        break;
+      case LOG_ENTRY_TYPE_CONFIG:
+        console.log('subscriber index: %s term: %s config', logIndex, entry.readEntryTerm());
+        break;
+      case LOG_ENTRY_TYPE_CHECKPOINT:
+        console.log('subscriber index: %s term: %s checkpoint', logIndex, entry.readEntryTerm());
+        break;
+      }
+    } else {
+      console.log('snapshot chunk offset: %s of %s (%s bytes)', entry.snapshotByteOffset, entry.snapshotTotalLength, entry.length);
+      if (entry.isLastChunk) {
+        console.log('snapshot done, logIndex %s logTerm %s', entry.logIndex, entry.logTerm);
+      }
+    }
+  }
 })).catch(err => console.warn(err.stack));
 
 function floodingNextFactory(enc, flood) {
