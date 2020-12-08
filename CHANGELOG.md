@@ -1,6 +1,7 @@
 0.4.0
-* BroadcastStateMachine: always announces its own PUB url, regardless of the RAFT state.
-* ZmqRaftPeerClient: a single RAFT peer wise client specializing in 0MQ RAFT protocol.
+
+* BroadcastStateMachine: always announces its own PUB URL, regardless of the RAFT state.
+* ZmqRaftPeerClient: a single RAFT peer client, specializing in the 0MQ RAFT protocol.
 * ZmqRaftClient: cluster aware client is now built on top of ZmqRaftPeerClient.
 * ZmqRaftPeerSub: a single RAFT peer BroadcastStateMachine client.
 * bin/console.js: new commands: `.cpeer` and `.subp`.
