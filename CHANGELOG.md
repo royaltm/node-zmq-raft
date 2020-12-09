@@ -1,3 +1,8 @@
+0.4.1
+
+* ZmqRaftPeerClient: (fix) RequestEntriesStream gets destroyed on request entries RPC error.
+* ZmqRaftPeerSub: (fix) ForeverEntriesStream prevents recreating missing entries stream on stream end.
+
 0.4.0
 
 * BroadcastStateMachine: always announces its own PUB URL, regardless of the RAFT state.
