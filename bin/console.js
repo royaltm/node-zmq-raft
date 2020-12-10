@@ -123,7 +123,7 @@ readConfig(argv[0] || defaultConfig, "raft")
     }
   });
   repl.defineCommand('pulse', {
-    help: 'Turn on/off reporting "pulse" events: [off]',
+    help: 'Turn on/off reporting peer-sub\'s "pulse" events: [off]',
     action: function(arg) {
       config.console.pulse = !/off|no|0/i.test(arg);
       if (client && typeof client.on === 'function') {
@@ -237,13 +237,32 @@ readConfig(argv[0] || defaultConfig, "raft")
     }
   });
   repl.defineCommand('start', {
-    help: 'Flood server with updates: [data]',
+    help: 'Flood server with updates: [data|+BURST_COUNT]',
     action: function(data) {
+      var burstcount = 1;
       const flood = repl.context.flood;
-      if (data) flood.data = data;
+      if (data) {
+        let mt = data.match(/^\+(\d+)$/);
+        if (mt) {
+          burstcount = mt[1]|0;
+          if (burstcount < 1 || burstcount > 100) {
+            console.log(yellow("BURST_COUNT should be between 1 and 100"))
+            return prompt(repl);
+          }
+        }
+        else flood.data = data;
+      }
       if (!flood.flooding) {
-        if (subs && subs.write) startFloodingStream(repl, subs);
-        else if (client) startFloodingClient(repl, client);
+        if (subs && subs.write) {
+          if (burstcount !== 1) {
+            console.log(yellow("to set BURST_COUNT for subscriber flood, set:\n") +
+                               "  config.subscriber.duplex = {writableHighWaterMark: %s}\n" +
+                          grey("before .subscribe ..."), burstcount);
+            return prompt(repl);
+          }
+          startFloodingStream(repl, subs);
+        }
+        else if (client) startFloodingClient(repl, client, burstcount);
         else console.log(yellow('not connected'));
       }
       prompt(repl);
@@ -500,16 +519,19 @@ readConfig(argv[0] || defaultConfig, "raft")
 })).catch(err => console.warn(err.stack));
 
 function floodingNextFactory(enc, flood) {
-  return function() {
+  return function(previous) {
     if (flood.flooding) {
       const iteration = ++flood.iteration;
       console.log('updating: %s', iteration);
       enc.encode({iteration, data: flood.data, time: new Date()});
     }
+    else {
+      console.log(cyan("flood over:") + " %s", previous);
+    }
   }
 }
 
-function startFloodingClient(repl, client) {
+function startFloodingClient(repl, client, burstcount) {
   const lastId = Buffer.alloc(12);
   const flood = repl.context.flood;
   const entries = repl.context.entries;
@@ -518,17 +540,28 @@ function startFloodingClient(repl, client) {
 
   enc.on('data', buf => {
     const id = genIdent(lastId, 0);
+    const iteration = flood.iteration;
     client.requestUpdate(id, buf)
     .then(index => {
-      entries.logIndex = index;
+      if (index > entries.logIndex) entries.logIndex = index;
       // console.log('updated log index: %s', index, buf.toString('hex'));
-      next();
+      next(iteration);
     })
-    .catch(err => replError(repl, err));
+    .catch(err => {
+      if (err.isTimeout) {
+        console.log(red("update response timeout for: ") + "%s", iteration);
+        next(iteration);
+      }
+      else {
+        flood.flooding = false;
+        replError(repl, err)
+      }
+    });
   });
 
   flood.flooding = true;
-  next();
+  let count = burstcount|0;
+  while (count-- > 0) next(flood.iteration);
 }
 
 function startFloodingStream(repl, subs) {
@@ -537,15 +570,16 @@ function startFloodingStream(repl, subs) {
   const next = floodingNextFactory(enc, flood);
 
   enc.on('data', buf => {
+    const iteration = flood.iteration;
     buf.requestId = genIdent();
     if (subs.write(buf)) {
-      next();
+      next(iteration);
     }
     else {
-      subs.once('drain', next);
+      subs.once('drain', () => next(iteration));
     }
   });
 
   flood.flooding = true;
-  next();
+  next(flood.iteration);
 }
