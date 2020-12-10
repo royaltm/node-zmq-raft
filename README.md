@@ -94,12 +94,12 @@ Client tools:
 Broadcasting State Machine (BSM)
 --------------------------------
 
-This repository includes one implementation of (state opaque) proxy state machine: `BroadcastStateMachine`.
+This repository provides one implementation of the (state opaque) proxy state machine: `BroadcastStateMachine`.
 
 BSM opens a ZMQ_PUB socket (when its peer is a Raft LEADER) and broadcasts applied log entries.
-Clients should query zmq-raft (with REQEUST_URL rpc) for broadcast url.
+Clients should query zmq-raft (with REQEUST_URL rpc) for the broadcasting PUB URL.
 
-State machine changes will be fan out to any number of clients in real-time.
+State machine changes will be fan out to any number of clients in real time.
 
 When clients miss some entries they have to query zmq-raft for missing entries with REQUEST_ENTRIES RPC.
 
@@ -145,7 +145,7 @@ Public intermediate common classes for building implementations:
 - [`raft.common.FilePersistence`](lib/common/file_persistence.js)
 - [`raft.common.StateMachineWriter`](lib/common/state_machine_writer.js)
 - [`raft.client.ZmqProtocolSocket`](lib/client/zmq_protocol_socket.js)
-- [`raft.server.RpcSocket`](lib/server/zmq_rpc_socket.js)
+- [`raft.server.ZmqRpcSocket`](lib/server/zmq_rpc_socket.js)
 
 Public base api classes for building implementations:
 
@@ -158,7 +158,7 @@ Helper utilities:
 - [`raft.common.constants`](lib/common/constants.js): important defaults.
 - [`raft.utils.id`](lib/utils/id.js): unique ID utilities.
 - [`raft.utils.helpers`](lib/utils/helpers.js): various helper functions.
-- [`raft.utils.fsutil`](lib/utils/fsutils.js): file utilities.
+- [`raft.utils.fsutil`](lib/utils/fsutil.js): file utilities.
 
 
 Usage
