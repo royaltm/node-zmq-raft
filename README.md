@@ -47,11 +47,11 @@ A Raft peer is a server with a single ZMQ_ROUTER type socket for connections inc
 
 ACID storage for the Raft's state:
 
-- current term
-- voter for
-- cluster config 
+- the current term,
+- the last voted for,
+- the cluster configuration.
 
-`RaftPersistence` class implementation is file based.
+The `RaftPersistence` implementation is file based.
 
 
 ### Log + Snapshot
@@ -61,7 +61,7 @@ ACID storage for:
 - log entries
 - a snapshot
 
-`FileLog` and `SnapshotFile` class implementations are file based.
+`FileLog` and `SnapshotFile` implementations are file based.
 
 See also: [ACID](ACID.md).
 
