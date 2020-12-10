@@ -32,21 +32,22 @@ const msgpack = require('msgpack-lite');
 
 const lookup = require('../lib/utils/dns_lookup').hostsToZmqUrls;
 
-const { genIdent } = require('../lib/utils/id');
-const { createRepl } = require('../lib/utils/repl');
-const ZmqRaftPeerClient = require('../lib/client/zmq_raft_peer_client');
-const ZmqRaftPeerSub = require('../lib/client/zmq_raft_peer_sub');
-const ZmqRaftClient = require('../lib/client/zmq_raft_client');
-const ZmqRaftSubscriber = require('../lib/client/zmq_raft_subscriber');
-const { LOG_ENTRY_TYPE_STATE, LOG_ENTRY_TYPE_CONFIG, LOG_ENTRY_TYPE_CHECKPOINT
-      , readers: { readTypeOf, readTermOf, readDataOf } } = require('../lib/common/log_entry');
+const raft = require('..');
 
+const { genIdent } = raft.utils.id;
+const { ZmqRaftPeerClient
+      , ZmqRaftPeerSub
+      , ZmqRaftClient
+      , ZmqRaftSubscriber } = raft.client;
+const { LOG_ENTRY_TYPE_STATE, LOG_ENTRY_TYPE_CONFIG, LOG_ENTRY_TYPE_CHECKPOINT
+      , readers: { readTypeOf, readTermOf, readDataOf } } = raft.common.LogEntry;
+
+const { createRepl } = require('../lib/utils/repl');
 const { listPeers
       , showInfo
       , argToBoolean
       , prompt
       , replError } = require('../lib/utils/repl_helpers');
-
 const { readConfig } = require('../lib/utils/config');
 
 const argv = process.argv.slice(2);
@@ -479,6 +480,7 @@ readConfig(argv[0] || defaultConfig, "raft")
       colors
     , ri: repl
     , mp: msgpack
+    , raft
     , ben
     , pkg
     , lookup
