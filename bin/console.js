@@ -122,6 +122,23 @@ readConfig(argv[0] || defaultConfig, "raft")
       }
     }
   });
+  repl.defineCommand('pulse', {
+    help: 'Turn on/off reporting "pulse" events: [off]',
+    action: function(arg) {
+      config.console.pulse = !/off|no|0/i.test(arg);
+      if (client && typeof client.on === 'function') {
+        client.removeAllListeners('pulse');
+        if (config.console.pulse) {
+          console.log("listening for pulses on: %s", green(client.url || '(none)'));
+          client.on('pulse', pulseHandler);
+        }
+      }
+      else {
+        console.log(yellow("1st subscribe with: .subp ADDRESS[:PORT]"));
+      }
+      prompt(repl);
+    }
+  });
   repl.defineCommand('subp', {
     help: 'Subscribe to a single broadcast state peer: [host[:port]|lastIndex]',
     action: function(host) {
@@ -148,7 +165,7 @@ readConfig(argv[0] || defaultConfig, "raft")
         else {
           console.log(yellow("subscribe to a peer first"));
         }
-        prompt(repl)
+        prompt(repl);
       }
       else {
         lookup(host).then(urls => {
@@ -164,9 +181,7 @@ readConfig(argv[0] || defaultConfig, "raft")
           console.log('subscribing to peer: %s', urls[0]);
           client.on('error', error);
           client.on('pub', url => console.log("PUB url: %s", green(url)));
-          // client.on('pulse', (ix, term, entries) => {
-          //   console.log(red("(( ))") + grey(" index: %s, term: %s, entries: %s"), ix, term, entries.length);
-          // });
+          if (config.console.pulse) client.on('pulse', pulseHandler);
           client.on('timeout', () => console.log(red("(X) BSM timeout!")));
           client.on('close', () => console.log(grey("peer subscriber closed")));
         })
@@ -426,6 +441,10 @@ readConfig(argv[0] || defaultConfig, "raft")
     repl.context.subs = subs = undefined;
     repl.context.client = client = undefined;
     repl.context.flood.flooding = false;
+  }
+
+  function pulseHandler(ix, term, entries) {
+    console.log(red("(( ))") + grey(" index: %s, term: %s, entries: %s"), ix, term, entries.length);
   }
 
   process.on('unhandledRejection', (error, promise) => {
