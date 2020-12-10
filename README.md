@@ -35,7 +35,7 @@ Components
 ```
 ### Cluster
 
-A group of well known and interconnected raft peers.
+A group of well known and interconnected Raft peers.
 
 
 ### Raft peer
@@ -45,7 +45,7 @@ A Raft peer is a server with a single ZMQ_ROUTER type socket for connections inc
 
 ### Persistence
 
-ACID storage for raft internal state:
+ACID storage for the Raft's state:
 
 - current term
 - voter for
@@ -59,7 +59,7 @@ ACID storage for raft internal state:
 ACID storage for:
 
 - log entries
-- snapshot
+- a snapshot
 
 `FileLog` and `SnapshotFile` class implementations are file based.
 
@@ -68,36 +68,46 @@ See also: [ACID](ACID.md).
 
 ### State machine
 
-State machine is opaque to zmq-raft.
-Developers should implement it following `StateMachineBase` class api.
+The state machine is opaque to zmq-raft.
+Developers should implement it following [`StateMachineBase`][lib/api/state_machine_base.js] class api.
 
 
 ### Clients
 
-Clients can connect directly to raft server for:
+Clients can connect directly to any Raft peer server for:
 
-- retrieving cluster config (with REQUEST_CONFIG rpc)
-- retrieving raft state info (with REQUEST_LOG_INFO rpc)
-- requesting log updates (with REQUEST_UPDATE rpc)
-- retrieving log entries (with REQUEST_ENTRIES rpc)
+- Retrieving the cluster configuration (cluster discovery) with REQUEST_CONFIG RPC.
+- Retrieving the latest Raft state and log meta-data with REQUEST_LOG_INFO RPC.
+- Retrieving log entries with REQUEST_ENTRIES RPC.
+- Uploading state updates with REQUEST_UPDATE RPC.
+- Requesting cluster configuration changes with CONFIG_UPDATE RPC.
+- Custom requests provided by the state machine implementation.
 
-Clients can connect to state machine to retrieve current state directly or via raft server (custom rpc type).
+Clients can also connect to the state machine directly depending on its implementation.
 
-A `ZmqRaftClient` class implements an easy to use rpc client socket.
+Client tools:
 
-Broadcasting state machine
---------------------------
+* [`ZmqRaftPeerClient`][lib/client/zmq_raft_peer_client.js] implements the single-peer client RPC protocol.
+* [`ZmqRaftClient`][lib/client/zmq_raft_client.js] implements an easy to use cluster-aware client, w/ peer failover, configuration auto-discovery etc.
+
+
+Broadcasting State Machine (BSM)
+--------------------------------
 
 This repository includes one implementation of (state opaque) proxy state machine: `BroadcastStateMachine`.
 
-Broadcasting state machine opens a ZMQ_PUB socket (when its peer is a leader) and broadcasts applied log entries.
+BSM opens a ZMQ_PUB socket (when its peer is a Raft LEADER) and broadcasts applied log entries.
 Clients should query zmq-raft (with REQEUST_URL rpc) for broadcast url.
 
 State machine changes will be fan out to any number of clients in real-time.
 
-When clients miss some entries they have to query zmq-raft for missing entries with REQUEST_ENTRIES rpc.
+When clients miss some entries they have to query zmq-raft for missing entries with REQUEST_ENTRIES RPC.
 
-This is implemented in `ZmqRaftSubscriber` class.
+Client tools:
+
+* [`ZmqRaftPeerSub`][lib/client/zmq_raft_peer_sub.js] implements the single-peer BSM-based log entries stream reader on top of `ZmqRaftPeerClient`.
+* [`ZmqRaftSubscriber`][lib/client/zmq_raft_subscriber.js] implements an easy to use cluster-aware BSM-based stream R/W client, w/ peer failover, configuration auto-discovery etc.
+
 
 Hier
 ----
@@ -112,70 +122,69 @@ Assuming:
 const raft = require('zmq-raft');
 ```
 
-- `raft.server.ZmqRaft`
-- `raft.server.FileLog`
-- `raft.common.SnaphotFile`
-- `raft.server.RaftPersistence`
-- `raft.server.BroadcastStateMachine`
+- [`raft.server.ZmqRaft`][lib/server/raft.js]
+- [`raft.server.FileLog`][lib/server/filelog.js]
+- [`raft.common.SnaphotFile`][lib/common/snapshotfile.js]
+- [`raft.server.RaftPersistence`][lib/server/raft_persistence.js]
+- [`raft.server.BroadcastStateMachine`][lib/server/broadcast_state_machine.js]
 
-- `raft.common.LogEntry`
+- [`raft.common.LogEntry`][lib/common/log_entry.js]
 
-- `raft.client.ZmqRaftClient`
-- `raft.client.ZmqRaftSubscriber`
+- [`raft.client.ZmqRaftPeerClient`][lib/client/zmq_raft_peer_client.js]
+- [`raft.client.ZmqRaftPeerSub`][lib/client/zmq_raft_peer_sub.js]
+- [`raft.client.ZmqRaftClient`][lib/client/zmq_raft_client.js]
+- [`raft.client.ZmqRaftSubscriber`][lib/client/zmq_raft_subscriber.js]
 
-- `raft.protocol.FramesProtocol`
-- `raft.protocol.Protocols`
+- [`raft.protocol.FramesProtocol`][lib/protocol/frames_protocol.js]
+- [`raft.protocol.Protocols`][lib/protocol/index.js]
 
 Public intermediate common classes for building implementations:
-
-- `raft.common.ClusterConfiguration`
-- `raft.common.IndexFile`
-- `raft.common.ReadyEmitter`
-- `raft.common.FilePersistence`
-- `raft.common.StateMachineWriter`
-- `raft.client.ZmqProtocolSocket`
-- `raft.server.RpcSocket`
+- [`raft.common.ClusterConfiguration`][lib/common/cluster_configuration.js]
+- [`raft.common.IndexFile`][lib/common/indexfile.js]
+- [`raft.common.ReadyEmitter`][lib/common/readyemitter.js]
+- [`raft.common.FilePersistence`][lib/common/file_persistence.js]
+- [`raft.common.StateMachineWriter`][lib/common/state_machine_writer.js]
+- [`raft.client.ZmqProtocolSocket`][lib/client/zmq_protocol_socket.js]
+- [`raft.server.RpcSocket`][lib/server/zmq_rpc_socket.js]
 
 Public base api classes for building implementations:
 
-- `raft.api.LogBase`
-- `raft.api.SnaphotBase`
-- `raft.api.PersistenceBase`
-- `raft.api.StateMachineBase`
-- `raft.client.ZmqSocketBase`
+- [`raft.api.PersistenceBase`][lib/api/persistence_base.js]
+- [`raft.api.StateMachineBase`][lib/api/state_machine_base.js]
 
 Helper utilities:
 
-- `raft.protocol`: communication protocol frames for FramesProtocol
-- `raft.common.constants`: important defaults
-- `raft.utils.id`: unique id utilities
-- `raft.utils.helpers`: various helper functions
-- `raft.utils.fsutil`: various file utils
+- [`raft.protocol`][lib/protocol/index.js]: communication protocol frames for FramesProtocol.
+- [`raft.common.constants`][lib/common/constants.js]: important defaults.
+- [`raft.utils.id`][lib/utils/id.js]: unique ID utilities.
+- [`raft.utils.helpers`][lib/utils/helpers.js]: various helper functions.
+- [`raft.utils.fsutil`][lib/utils/fsutils.js]: file utilities.
+
 
 Usage
 -----
 
-Building raft server requires to assemble component class instances for:
+Building a Raft server requires to assemble component class instances for:
 
-- raft persistence
-- log + snapshot
-- state machine
-- raft server
+- The Raft Persistence.
+- Log + snapshot.
+- The state machine.
+- The `ZmqRaft` server.
 
-The simplest way is to use `raft.server.build` function which provides convenient defaults.
+The simplest way is to use [`raft.server.builder`][lib/server/builder.js] that provides convenient defaults for all the necessary components.
 
 This will create a single peer raft server listening on `tcp://127.0.0.1:8047` with data stored in `/tmp/raft` directory:
 
 ```js
 const raft = require('zmq-raft');
-raft.server.build({data: {path: '/tmp/raft'}}).then(zmqRaft => {
+raft.server.builder.build({data: {path: '/tmp/raft'}}).then(zmqRaft => {
   console.log('server alive and ready at: %s', zmqRaft.url);
 });
 ```
 
-The following example will create a raft server instance for the first peer in a cluster with BroadcastStateMachine as a state machine:
+The following example will create a raft server instance for the first peer in a cluster with the `BroadcastStateMachine` as its state machine:
 ```js
-raft.server.build({
+raft.server.builder.build({
   id: "my1",
   secret: "",
   peers: [
@@ -199,10 +208,10 @@ raft.server.build({
 }).then(zmqRaft => { /* ... */ });
 ```
 
-To provide a custom state machine override `factory.state` function in `raft.server.build` options:
+To provide a custom state machine override `factory.state` function in `builder.build` options:
 
 ```js
-raft.server.build({
+raft.server.builder.build({
   /* ... */
   factory: {
     state: (options) => new MyStateMachine(options);
@@ -214,7 +223,7 @@ Provide your own listeners for events on the `ZmqRaft` instance instead of the d
 The listeners are attached early just after `ZmqRaft` is being initialized.
 
 ```js
-raft.server.build({
+raft.server.builder.build({
   /* ... */
   listeners: {
     error: (err) => {
@@ -228,12 +237,10 @@ raft.server.build({
 })
 ```
 
-See [builder](lib/server/builder.js).
-
 
 ### Quick Start Guide.
 
-For testing, to quickly setup a raft server with a broadcast state machine use `bin/zmq-raft.js`:
+For testing, to quickly setup the 0MQ Raft server with the Broadcasting State Machine use `bin/zmq-raft.js`:
 
 ```
   Usage: zmq-raft [options] [id]
@@ -260,7 +267,7 @@ bin/zmq-raft.js -c config/example.hjson 2 &
 bin/zmq-raft.js -c config/example.hjson 3 &
 ```
 
-You can direct your browser to the webmonitor of any of the started peers:
+You can direct your web browser to the webmonitor of any of the started peers:
 
 - http://localhost:8050
 - http://localhost:8150
@@ -273,12 +280,13 @@ DEBUG=* npm run cli
 ```
 
 1. Now, from the `cli`, let's connect to the cluster with: `.connect 127.0.0.1:8047`.
-2. Let's subscribe to the state machine from another console with: `.subscribe 127.0.0.1:8047`.
+2. Let's subscribe to the BSM from another console with: `.subscribe 127.0.0.1:8047`.
 3. We can now flood the cluster with some updates using: `.start some_data`. You will see the updates being populated to the subscribers.
 4. To stop flooding, enter `.stop`.
 5. To read the whole log, type: `.read`.
 6. To get the current log information, type: `.info`.
 7. Type `.help` for more commands.
+
 
 ### Cluster membership changes.
 
