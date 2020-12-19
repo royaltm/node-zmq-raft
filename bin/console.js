@@ -534,14 +534,16 @@ function floodingNextFactory(enc, flood) {
 }
 
 function startFloodingClient(repl, client, burstcount) {
-  const lastId = Buffer.alloc(12);
   const flood = repl.context.flood;
   const entries = repl.context.entries;
   const enc = new msgpack.Encoder();
   const next = floodingNextFactory(enc, flood);
+  const genID = repl.context.config.updateId === "random"
+              ? crypto.randomFillSync
+              : genIdent;
 
   enc.on('data', buf => {
-    const id = genIdent(lastId, 0);
+    const id = genID(Buffer.allocUnsafe(12), 0);
     const iteration = flood.iteration;
     client.requestUpdate(id, buf)
     .then(index => {
@@ -570,10 +572,13 @@ function startFloodingStream(repl, subs) {
   const flood = repl.context.flood;
   const enc = new msgpack.Encoder();
   const next = floodingNextFactory(enc, flood);
+  const genID = repl.context.config.updateId === "random"
+              ? () => crypto.randomBytes(12).toString('hex')
+              : genIdent;
 
   enc.on('data', buf => {
     const iteration = flood.iteration;
-    buf.requestId = genIdent();
+    buf.requestId = genID();
     if (subs.write(buf)) {
       next(iteration);
     }

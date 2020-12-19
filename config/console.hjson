@@ -6,6 +6,10 @@ raft:
   # bin/console.js
   console:
   {
+    # This option enables the entropy-based request ID generation for flood updates.
+    # Requires zmq-raft server peers' FileLog option requestIdTtl to be null.
+    # updateId: "random"
+
     client:
     {
       # ZMQ_SNDHWM for zmq_setsockopt
