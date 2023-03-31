@@ -1,4 +1,4 @@
-/* 
+/*
  *  Copyright (c) 2016 Rafał Michalski <royal@yeondir.com>
  *  License: LGPL
  */
@@ -20,76 +20,76 @@ test('FramesProtocol', suite => {
 
   suite.test('empty schema', t => {
     var protocol = new FramesProtocol([], []);
-    t.deepEquals(protocol.encodeRequest(), []);
-    t.deepEquals(protocol.encodeRequest(''), []);
-    t.deepEquals(protocol.encodeRequest([]), []);
-    t.deepEquals(protocol.encodeRequest(['']), []);
-    t.deepEquals(protocol.decodeRequest([]), []);
-    t.deepEquals(protocol.decodeRequest(['']), []);
-    t.deepEquals(protocol.encodeResponse(), []);
-    t.deepEquals(protocol.encodeResponse(''), []);
-    t.deepEquals(protocol.encodeResponse([]), []);
-    t.deepEquals(protocol.encodeResponse(['']), []);
-    t.deepEquals(protocol.decodeResponse([]), []);
-    t.deepEquals(protocol.decodeResponse(['']), []);
+    t.same(protocol.encodeRequest(), []);
+    t.same(protocol.encodeRequest(''), []);
+    t.same(protocol.encodeRequest([]), []);
+    t.same(protocol.encodeRequest(['']), []);
+    t.same(protocol.decodeRequest([]), []);
+    t.same(protocol.decodeRequest(['']), []);
+    t.same(protocol.encodeResponse(), []);
+    t.same(protocol.encodeResponse(''), []);
+    t.same(protocol.encodeResponse([]), []);
+    t.same(protocol.encodeResponse(['']), []);
+    t.same(protocol.decodeResponse([]), []);
+    t.same(protocol.decodeResponse(['']), []);
 
     var protocol = new FramesProtocol([], [], {extraArgs: true});
-    t.deepEquals(protocol.encodeRequest(), []);
-    t.deepEquals(protocol.encodeRequest(''), ['']);
-    t.deepEquals(protocol.encodeRequest([]), []);
-    t.deepEquals(protocol.encodeRequest(['']), ['']);
-    t.deepEquals(protocol.decodeRequest([]), []);
-    t.deepEquals(protocol.decodeRequest(['']), ['']);
-    t.deepEquals(protocol.encodeResponse(), []);
-    t.deepEquals(protocol.encodeResponse(''), ['']);
-    t.deepEquals(protocol.encodeResponse([]), []);
-    t.deepEquals(protocol.encodeResponse(['']), ['']);
-    t.deepEquals(protocol.decodeResponse([]), []);
-    t.deepEquals(protocol.decodeResponse(['']), ['']);
+    t.same(protocol.encodeRequest(), []);
+    t.same(protocol.encodeRequest(''), ['']);
+    t.same(protocol.encodeRequest([]), []);
+    t.same(protocol.encodeRequest(['']), ['']);
+    t.same(protocol.decodeRequest([]), []);
+    t.same(protocol.decodeRequest(['']), ['']);
+    t.same(protocol.encodeResponse(), []);
+    t.same(protocol.encodeResponse(''), ['']);
+    t.same(protocol.encodeResponse([]), []);
+    t.same(protocol.encodeResponse(['']), ['']);
+    t.same(protocol.decodeResponse([]), []);
+    t.same(protocol.decodeResponse(['']), ['']);
     t.end();
   });
 
   suite.test('one argument schema', t => {
     var protocol = new FramesProtocol(['string'], ['number']);
-    t.deepEquals(protocol.encodeRequest(), []);
-    t.deepEquals(protocol.encodeRequest([]), []);
-    t.deepEquals(protocol.encodeRequest(''), [Buffer.alloc(0)]);
-    t.deepEquals(protocol.encodeRequest('foo'), [Buffer.from('foo')]);
+    t.same(protocol.encodeRequest(), []);
+    t.same(protocol.encodeRequest([]), []);
+    t.same(protocol.encodeRequest(''), [Buffer.alloc(0)]);
+    t.same(protocol.encodeRequest('foo'), [Buffer.from('foo')]);
     var buf = Buffer.from('bar');
-    t.deepEquals(protocol.encodeRequest(buf), [Buffer.from('bar')]);
-    t.strictEquals(protocol.encodeRequest(buf)[0], buf);
-    t.deepEquals(protocol.encodeRequest(0), [Buffer.from('0')]);
-    t.deepEquals(protocol.decodeRequest([]), [undefined]);
-    t.deepEquals(protocol.decodeRequest([Buffer.alloc(0)]), ['']);
-    t.deepEquals(protocol.decodeRequest([Buffer.from('foo')]), ['foo']);
-    t.deepEquals(protocol.decodeRequest([Buffer.from('0')]), ['0']);
-    t.deepEquals(protocol.encodeResponse(), []);
-    t.deepEquals(protocol.encodeResponse([]), []);
-    t.deepEquals(protocol.encodeResponse(0), [Buffer.from([0])]);
-    t.deepEquals(protocol.encodeResponse([0]), [Buffer.from([0])]);
+    t.same(protocol.encodeRequest(buf), [Buffer.from('bar')]);
+    t.equal(protocol.encodeRequest(buf)[0], buf);
+    t.same(protocol.encodeRequest(0), [Buffer.from('0')]);
+    t.same(protocol.decodeRequest([]), [undefined]);
+    t.same(protocol.decodeRequest([Buffer.alloc(0)]), ['']);
+    t.same(protocol.decodeRequest([Buffer.from('foo')]), ['foo']);
+    t.same(protocol.decodeRequest([Buffer.from('0')]), ['0']);
+    t.same(protocol.encodeResponse(), []);
+    t.same(protocol.encodeResponse([]), []);
+    t.same(protocol.encodeResponse(0), [Buffer.from([0])]);
+    t.same(protocol.encodeResponse([0]), [Buffer.from([0])]);
     t.throws(() => protocol.encodeResponse('0'), new TypeError('value is not a number'));
     t.throws(() => protocol.encodeResponse(['0']), new TypeError('value is not a number'));
     var buf = Buffer.from('bar');
-    t.deepEquals(protocol.encodeResponse(buf), [Buffer.from('bar')]);
-    t.strictEquals(protocol.encodeResponse(buf)[0], buf);
-    t.deepEquals(protocol.encodeResponse(Number.MAX_SAFE_INTEGER), [Buffer.from([255,255,255,255,255,255,31])]);
-    t.deepEquals(protocol.encodeResponse([Number.MAX_SAFE_INTEGER]), [Buffer.from([255,255,255,255,255,255,31])]);
-    t.deepEquals(protocol.encodeResponse(Number.MIN_SAFE_INTEGER), [Buffer.from([1,0,0,0,0,0,224])]);
-    t.deepEquals(protocol.encodeResponse([Number.MIN_SAFE_INTEGER]), [Buffer.from([1,0,0,0,0,0,224])]);
-    t.deepEquals(protocol.encodeResponse(Number.MAX_VALUE), [Buffer.from([255,255,255,255,255,255,239,127])]);
-    t.deepEquals(protocol.encodeResponse([Number.MAX_VALUE]), [Buffer.from([255,255,255,255,255,255,239,127])]);
-    t.deepEquals(protocol.encodeResponse(Number.MIN_VALUE), [Buffer.from([1,0,0,0,0,0,0,0])]);
-    t.deepEquals(protocol.encodeResponse([Number.MIN_VALUE]), [Buffer.from([1,0,0,0,0,0,0,0])]);
-    t.deepEquals(protocol.encodeResponse(Number.EPSILON), [Buffer.from([0,0,0,0,0,0,176,60])]);
-    t.deepEquals(protocol.encodeResponse(Math.PI), [Buffer.from([24,45,68,84,251,33,9,64])]);
-    t.deepEquals(protocol.encodeResponse([Math.E]), [Buffer.from([105,87,20,139,10,191,5,64])]);
-    t.deepEquals(protocol.decodeResponse([]), [undefined]);
-    t.deepEquals(protocol.decodeResponse([Buffer.from([0])]), [0]);
-    t.deepEquals(protocol.decodeResponse([Buffer.from([0,0,0,0,0,0,0,0])]), [0]);
-    t.deepEquals(protocol.decodeResponse([Buffer.from([105,87,20,139,10,191,5,64])]), [Math.E]);
-    t.deepEquals(protocol.decodeResponse([Buffer.from([255,255,255,255,255,255,31])]), [Number.MAX_SAFE_INTEGER]);
-    t.deepEquals(protocol.decodeResponse([Buffer.from([1,0,0,0,0,0,0,0])]), [Number.MIN_VALUE]);
-    t.deepEquals(protocol.decodeResponse([Buffer.from([24,45,68,84,251,33,9,64])]), [Math.PI]);
+    t.same(protocol.encodeResponse(buf), [Buffer.from('bar')]);
+    t.equal(protocol.encodeResponse(buf)[0], buf);
+    t.same(protocol.encodeResponse(Number.MAX_SAFE_INTEGER), [Buffer.from([255,255,255,255,255,255,31])]);
+    t.same(protocol.encodeResponse([Number.MAX_SAFE_INTEGER]), [Buffer.from([255,255,255,255,255,255,31])]);
+    t.same(protocol.encodeResponse(Number.MIN_SAFE_INTEGER), [Buffer.from([1,0,0,0,0,0,224])]);
+    t.same(protocol.encodeResponse([Number.MIN_SAFE_INTEGER]), [Buffer.from([1,0,0,0,0,0,224])]);
+    t.same(protocol.encodeResponse(Number.MAX_VALUE), [Buffer.from([255,255,255,255,255,255,239,127])]);
+    t.same(protocol.encodeResponse([Number.MAX_VALUE]), [Buffer.from([255,255,255,255,255,255,239,127])]);
+    t.same(protocol.encodeResponse(Number.MIN_VALUE), [Buffer.from([1,0,0,0,0,0,0,0])]);
+    t.same(protocol.encodeResponse([Number.MIN_VALUE]), [Buffer.from([1,0,0,0,0,0,0,0])]);
+    t.same(protocol.encodeResponse(Number.EPSILON), [Buffer.from([0,0,0,0,0,0,176,60])]);
+    t.same(protocol.encodeResponse(Math.PI), [Buffer.from([24,45,68,84,251,33,9,64])]);
+    t.same(protocol.encodeResponse([Math.E]), [Buffer.from([105,87,20,139,10,191,5,64])]);
+    t.same(protocol.decodeResponse([]), [undefined]);
+    t.same(protocol.decodeResponse([Buffer.from([0])]), [0]);
+    t.same(protocol.decodeResponse([Buffer.from([0,0,0,0,0,0,0,0])]), [0]);
+    t.same(protocol.decodeResponse([Buffer.from([105,87,20,139,10,191,5,64])]), [Math.E]);
+    t.same(protocol.decodeResponse([Buffer.from([255,255,255,255,255,255,31])]), [Number.MAX_SAFE_INTEGER]);
+    t.same(protocol.decodeResponse([Buffer.from([1,0,0,0,0,0,0,0])]), [Number.MIN_VALUE]);
+    t.same(protocol.decodeResponse([Buffer.from([24,45,68,84,251,33,9,64])]), [Math.PI]);
     t.throws(() => protocol.decodeResponse([Buffer.alloc(0)]), new TypeError('decode frames error: number must not be null at frame 1'));
     t.end();
   });
@@ -99,43 +99,43 @@ test('FramesProtocol', suite => {
     var protocol = new FramesProtocol(['string'], ['number'], {required: 1});
     t.throws(() => protocol.encodeRequest(), new Error("encode frames error: not enough arguments"));
     t.throws(() => protocol.encodeRequest([]), new Error("encode frames error: not enough arguments"));
-    t.deepEquals(protocol.encodeRequest(''), [Buffer.alloc(0)]);
-    t.deepEquals(protocol.encodeRequest('foo'), [Buffer.from('foo')]);
+    t.same(protocol.encodeRequest(''), [Buffer.alloc(0)]);
+    t.same(protocol.encodeRequest('foo'), [Buffer.from('foo')]);
     var buf = Buffer.from('bar');
-    t.deepEquals(protocol.encodeRequest(buf), [Buffer.from('bar')]);
-    t.strictEquals(protocol.encodeRequest(buf)[0], buf);
-    t.deepEquals(protocol.encodeRequest(0), [Buffer.from('0')]);
+    t.same(protocol.encodeRequest(buf), [Buffer.from('bar')]);
+    t.equal(protocol.encodeRequest(buf)[0], buf);
+    t.same(protocol.encodeRequest(0), [Buffer.from('0')]);
     t.throws(() => protocol.decodeRequest([]), new Error("decode frames error: not enough frames"));
-    t.deepEquals(protocol.decodeRequest([Buffer.alloc(0)]), ['']);
-    t.deepEquals(protocol.decodeRequest([Buffer.from('foo')]), ['foo']);
-    t.deepEquals(protocol.decodeRequest([Buffer.from('0')]), ['0']);
+    t.same(protocol.decodeRequest([Buffer.alloc(0)]), ['']);
+    t.same(protocol.decodeRequest([Buffer.from('foo')]), ['foo']);
+    t.same(protocol.decodeRequest([Buffer.from('0')]), ['0']);
     t.throws(() => protocol.encodeResponse(), new Error("encode frames error: not enough arguments"));
     t.throws(() => protocol.encodeResponse([]), new Error("encode frames error: not enough arguments"));
-    t.deepEquals(protocol.encodeResponse(0), [Buffer.from([0])]);
-    t.deepEquals(protocol.encodeResponse([0]), [Buffer.from([0])]);
+    t.same(protocol.encodeResponse(0), [Buffer.from([0])]);
+    t.same(protocol.encodeResponse([0]), [Buffer.from([0])]);
     t.throws(() => protocol.encodeResponse('0'), new TypeError('value is not a number'));
     t.throws(() => protocol.encodeResponse(['0']), new TypeError('value is not a number'));
     var buf = Buffer.from('bar');
-    t.deepEquals(protocol.encodeResponse(buf), [Buffer.from('bar')]);
-    t.strictEquals(protocol.encodeResponse(buf)[0], buf);
-    t.deepEquals(protocol.encodeResponse(Number.MAX_SAFE_INTEGER), [Buffer.from([255,255,255,255,255,255,31])]);
-    t.deepEquals(protocol.encodeResponse([Number.MAX_SAFE_INTEGER]), [Buffer.from([255,255,255,255,255,255,31])]);
-    t.deepEquals(protocol.encodeResponse(Number.MIN_SAFE_INTEGER), [Buffer.from([1,0,0,0,0,0,224])]);
-    t.deepEquals(protocol.encodeResponse([Number.MIN_SAFE_INTEGER]), [Buffer.from([1,0,0,0,0,0,224])]);
-    t.deepEquals(protocol.encodeResponse(Number.MAX_VALUE), [Buffer.from([255,255,255,255,255,255,239,127])]);
-    t.deepEquals(protocol.encodeResponse([Number.MAX_VALUE]), [Buffer.from([255,255,255,255,255,255,239,127])]);
-    t.deepEquals(protocol.encodeResponse(Number.MIN_VALUE), [Buffer.from([1,0,0,0,0,0,0,0])]);
-    t.deepEquals(protocol.encodeResponse([Number.MIN_VALUE]), [Buffer.from([1,0,0,0,0,0,0,0])]);
-    t.deepEquals(protocol.encodeResponse(Number.EPSILON), [Buffer.from([0,0,0,0,0,0,176,60])]);
-    t.deepEquals(protocol.encodeResponse(Math.PI), [Buffer.from([24,45,68,84,251,33,9,64])]);
-    t.deepEquals(protocol.encodeResponse([Math.E]), [Buffer.from([105,87,20,139,10,191,5,64])]);
+    t.same(protocol.encodeResponse(buf), [Buffer.from('bar')]);
+    t.equal(protocol.encodeResponse(buf)[0], buf);
+    t.same(protocol.encodeResponse(Number.MAX_SAFE_INTEGER), [Buffer.from([255,255,255,255,255,255,31])]);
+    t.same(protocol.encodeResponse([Number.MAX_SAFE_INTEGER]), [Buffer.from([255,255,255,255,255,255,31])]);
+    t.same(protocol.encodeResponse(Number.MIN_SAFE_INTEGER), [Buffer.from([1,0,0,0,0,0,224])]);
+    t.same(protocol.encodeResponse([Number.MIN_SAFE_INTEGER]), [Buffer.from([1,0,0,0,0,0,224])]);
+    t.same(protocol.encodeResponse(Number.MAX_VALUE), [Buffer.from([255,255,255,255,255,255,239,127])]);
+    t.same(protocol.encodeResponse([Number.MAX_VALUE]), [Buffer.from([255,255,255,255,255,255,239,127])]);
+    t.same(protocol.encodeResponse(Number.MIN_VALUE), [Buffer.from([1,0,0,0,0,0,0,0])]);
+    t.same(protocol.encodeResponse([Number.MIN_VALUE]), [Buffer.from([1,0,0,0,0,0,0,0])]);
+    t.same(protocol.encodeResponse(Number.EPSILON), [Buffer.from([0,0,0,0,0,0,176,60])]);
+    t.same(protocol.encodeResponse(Math.PI), [Buffer.from([24,45,68,84,251,33,9,64])]);
+    t.same(protocol.encodeResponse([Math.E]), [Buffer.from([105,87,20,139,10,191,5,64])]);
     t.throws(() => protocol.decodeResponse([]), new Error("decode frames error: not enough frames"));
-    t.deepEquals(protocol.decodeResponse([Buffer.from([0])]), [0]);
-    t.deepEquals(protocol.decodeResponse([Buffer.from([0,0,0,0,0,0,0,0])]), [0]);
-    t.deepEquals(protocol.decodeResponse([Buffer.from([105,87,20,139,10,191,5,64])]), [Math.E]);
-    t.deepEquals(protocol.decodeResponse([Buffer.from([255,255,255,255,255,255,31])]), [Number.MAX_SAFE_INTEGER]);
-    t.deepEquals(protocol.decodeResponse([Buffer.from([1,0,0,0,0,0,0,0])]), [Number.MIN_VALUE]);
-    t.deepEquals(protocol.decodeResponse([Buffer.from([24,45,68,84,251,33,9,64])]), [Math.PI]);
+    t.same(protocol.decodeResponse([Buffer.from([0])]), [0]);
+    t.same(protocol.decodeResponse([Buffer.from([0,0,0,0,0,0,0,0])]), [0]);
+    t.same(protocol.decodeResponse([Buffer.from([105,87,20,139,10,191,5,64])]), [Math.E]);
+    t.same(protocol.decodeResponse([Buffer.from([255,255,255,255,255,255,31])]), [Number.MAX_SAFE_INTEGER]);
+    t.same(protocol.decodeResponse([Buffer.from([1,0,0,0,0,0,0,0])]), [Number.MIN_VALUE]);
+    t.same(protocol.decodeResponse([Buffer.from([24,45,68,84,251,33,9,64])]), [Math.PI]);
     t.throws(() => protocol.decodeResponse([Buffer.alloc(0)]), new TypeError('decode frames error: number must not be null at frame 1'));
     t.end();
   });
@@ -147,27 +147,27 @@ test('FramesProtocol', suite => {
     t.throws(() => protocol.encodeRequest('foo'), new Error("encode frames error: not enough arguments"));
     t.throws(() => protocol.encodeRequest(['foo']), new Error("encode frames error: not enough arguments"));
     t.throws(() => protocol.encodeRequest(['foo',1]), new Error("encode frames error: not enough arguments"));
-    t.deepEquals(protocol.encodeRequest(['foo',-42,true]), [Buffer.from('foo'), Buffer.from([-42]), Buffer.from([1])]);
-    t.deepEquals(protocol.encodeRequest(['bar',255,false,255]), [Buffer.from('bar'), Buffer.from([255,0]), Buffer.alloc(0), Buffer.from([255])]);
+    t.same(protocol.encodeRequest(['foo',-42,true]), [Buffer.from('foo'), Buffer.from([-42]), Buffer.from([1])]);
+    t.same(protocol.encodeRequest(['bar',255,false,255]), [Buffer.from('bar'), Buffer.from([255,0]), Buffer.alloc(0), Buffer.from([255])]);
     var buf = Buffer.from('baz');
-    t.deepEquals(protocol.encodeRequest([buf,buf,buf,buf]), [Buffer.from('baz'),Buffer.from('baz'),Buffer.from('baz'),Buffer.from('baz')]);
-    t.strictEquals(protocol.encodeRequest([buf,buf,buf])[0], buf);
-    t.strictEquals(protocol.encodeRequest([buf,buf,buf])[1], buf);
-    t.strictEquals(protocol.encodeRequest([buf,buf,buf])[2], buf);
-    t.strictEquals(protocol.encodeRequest([buf,buf,buf,buf])[3], buf);
+    t.same(protocol.encodeRequest([buf,buf,buf,buf]), [Buffer.from('baz'),Buffer.from('baz'),Buffer.from('baz'),Buffer.from('baz')]);
+    t.equal(protocol.encodeRequest([buf,buf,buf])[0], buf);
+    t.equal(protocol.encodeRequest([buf,buf,buf])[1], buf);
+    t.equal(protocol.encodeRequest([buf,buf,buf])[2], buf);
+    t.equal(protocol.encodeRequest([buf,buf,buf,buf])[3], buf);
 
     t.throws(() => protocol.encodeResponse(), new Error("encode frames error: not enough arguments"));
     t.throws(() => protocol.encodeResponse([]), new Error("encode frames error: not enough arguments"));
-    t.deepEquals(protocol.encodeResponse([buf]), [Buffer.from('baz')]);
-    t.deepEquals(protocol.encodeResponse(buf), [Buffer.from('baz')]);
-    t.strictEquals(protocol.encodeResponse(buf)[0], buf);
-    t.strictEquals(protocol.encodeResponse([buf,buf])[0], buf);
-    t.strictEquals(protocol.encodeResponse([buf,buf])[1], buf);
-    t.deepEquals(protocol.encodeResponse([buf, {moo: 'bee'}]), [Buffer.from('baz'), Buffer.from([129,163,109,111,111,163,98,101,101])]);
+    t.same(protocol.encodeResponse([buf]), [Buffer.from('baz')]);
+    t.same(protocol.encodeResponse(buf), [Buffer.from('baz')]);
+    t.equal(protocol.encodeResponse(buf)[0], buf);
+    t.equal(protocol.encodeResponse([buf,buf])[0], buf);
+    t.equal(protocol.encodeResponse([buf,buf])[1], buf);
+    t.same(protocol.encodeResponse([buf, {moo: 'bee'}]), [Buffer.from('baz'), Buffer.from([129,163,109,111,111,163,98,101,101])]);
     t.throws(() => protocol.decodeResponse([]), new Error("decode frames error: not enough frames"));
-    t.deepEquals(protocol.decodeResponse([buf]), [Buffer.from('baz'), undefined]);
-    t.strictEquals(protocol.decodeResponse([buf])[0], buf);
-    t.deepEquals(protocol.decodeResponse([buf, Buffer.from([129,163,98,101,101,163,109,111,111])]), [Buffer.from('baz'), {bee: 'moo'}]);
+    t.same(protocol.decodeResponse([buf]), [Buffer.from('baz'), undefined]);
+    t.equal(protocol.decodeResponse([buf])[0], buf);
+    t.same(protocol.decodeResponse([buf, Buffer.from([129,163,98,101,101,163,109,111,111])]), [Buffer.from('baz'), {bee: 'moo'}]);
     t.end();
   });
 
@@ -178,32 +178,32 @@ test('FramesProtocol', suite => {
     t.throws(() => protocol.encodeRequest('foo'), new Error("encode frames error: not enough arguments"));
     t.throws(() => protocol.encodeRequest(['foo']), new Error("encode frames error: not enough arguments"));
     t.throws(() => protocol.encodeRequest(['foo',1]), new Error("encode frames error: not enough arguments"));
-    t.deepEquals(protocol.encodeRequest(['foo',-42,true]), [Buffer.from('foo'), Buffer.from([-42]), Buffer.from([1])]);
-    t.deepEquals(protocol.encodeRequest(['bar',255,false,255,'extra']), [Buffer.from('bar'), Buffer.from([255,0]), Buffer.alloc(0), Buffer.from([255])]);
+    t.same(protocol.encodeRequest(['foo',-42,true]), [Buffer.from('foo'), Buffer.from([-42]), Buffer.from([1])]);
+    t.same(protocol.encodeRequest(['bar',255,false,255,'extra']), [Buffer.from('bar'), Buffer.from([255,0]), Buffer.alloc(0), Buffer.from([255])]);
     var buf = Buffer.from('baz');
-    t.deepEquals(protocol.encodeRequest([buf,buf,buf,buf,'extra']), [Buffer.from('baz'),Buffer.from('baz'),Buffer.from('baz'),Buffer.from('baz')]);
-    t.strictEquals(protocol.encodeRequest([buf,buf,buf])[0], buf);
-    t.strictEquals(protocol.encodeRequest([buf,buf,buf])[1], buf);
-    t.strictEquals(protocol.encodeRequest([buf,buf,buf])[2], buf);
-    t.strictEquals(protocol.encodeRequest([buf,buf,buf,buf])[3], buf);
+    t.same(protocol.encodeRequest([buf,buf,buf,buf,'extra']), [Buffer.from('baz'),Buffer.from('baz'),Buffer.from('baz'),Buffer.from('baz')]);
+    t.equal(protocol.encodeRequest([buf,buf,buf])[0], buf);
+    t.equal(protocol.encodeRequest([buf,buf,buf])[1], buf);
+    t.equal(protocol.encodeRequest([buf,buf,buf])[2], buf);
+    t.equal(protocol.encodeRequest([buf,buf,buf,buf])[3], buf);
 
     t.throws(() => protocol.encodeResponse(), new Error("encode frames error: not enough arguments"));
     t.throws(() => protocol.encodeResponse([]), new Error("encode frames error: not enough arguments"));
-    t.deepEquals(protocol.encodeResponse([buf]), [Buffer.from('baz')]);
-    t.deepEquals(protocol.encodeResponse([buf, undefined]), [Buffer.from('baz')]);
-    t.deepEquals(protocol.encodeResponse(buf), [Buffer.from('baz')]);
-    t.strictEquals(protocol.encodeResponse(buf)[0], buf);
-    t.strictEquals(protocol.encodeResponse([buf,buf])[0], buf);
-    t.strictEquals(protocol.encodeResponse([buf,buf])[1], buf);
-    t.deepEquals(protocol.encodeResponse([buf, {moo: 'bee'}]), [Buffer.from('baz'), Buffer.from([129,163,109,111,111,163,98,101,101])]);
-    t.deepEquals(protocol.encodeResponse([buf, {moo: 'bee'}, 'extra']), [Buffer.from('baz'), Buffer.from([129,163,109,111,111,163,98,101,101]), 'extra']);
-    t.deepEquals(protocol.encodeResponse([buf, {moo: 'bee'}, 'extra2', 'extra']), [Buffer.from('baz'), Buffer.from([129,163,109,111,111,163,98,101,101]), 'extra2', 'extra']);
+    t.same(protocol.encodeResponse([buf]), [Buffer.from('baz')]);
+    t.same(protocol.encodeResponse([buf, undefined]), [Buffer.from('baz')]);
+    t.same(protocol.encodeResponse(buf), [Buffer.from('baz')]);
+    t.equal(protocol.encodeResponse(buf)[0], buf);
+    t.equal(protocol.encodeResponse([buf,buf])[0], buf);
+    t.equal(protocol.encodeResponse([buf,buf])[1], buf);
+    t.same(protocol.encodeResponse([buf, {moo: 'bee'}]), [Buffer.from('baz'), Buffer.from([129,163,109,111,111,163,98,101,101])]);
+    t.same(protocol.encodeResponse([buf, {moo: 'bee'}, 'extra']), [Buffer.from('baz'), Buffer.from([129,163,109,111,111,163,98,101,101]), 'extra']);
+    t.same(protocol.encodeResponse([buf, {moo: 'bee'}, 'extra2', 'extra']), [Buffer.from('baz'), Buffer.from([129,163,109,111,111,163,98,101,101]), 'extra2', 'extra']);
     t.throws(() => protocol.decodeResponse([]), new Error("decode frames error: not enough frames"));
-    t.deepEquals(protocol.decodeResponse([buf]), [Buffer.from('baz'), undefined]);
-    t.strictEquals(protocol.decodeResponse([buf])[0], buf);
-    t.deepEquals(protocol.decodeResponse([buf, Buffer.from([129,163,98,101,101,163,109,111,111])]), [Buffer.from('baz'), {bee: 'moo'}]);
-    t.deepEquals(protocol.decodeResponse([buf, Buffer.from([129,163,98,101,101,163,109,111,111]), 'extra']), [Buffer.from('baz'), {bee: 'moo'}, 'extra']);
-    t.deepEquals(protocol.decodeResponse([buf, Buffer.from([129,163,98,101,101,163,109,111,111]), 'extra2', 'extra']), [Buffer.from('baz'), {bee: 'moo'}, 'extra2', 'extra']);
+    t.same(protocol.decodeResponse([buf]), [Buffer.from('baz'), undefined]);
+    t.equal(protocol.decodeResponse([buf])[0], buf);
+    t.same(protocol.decodeResponse([buf, Buffer.from([129,163,98,101,101,163,109,111,111])]), [Buffer.from('baz'), {bee: 'moo'}]);
+    t.same(protocol.decodeResponse([buf, Buffer.from([129,163,98,101,101,163,109,111,111]), 'extra']), [Buffer.from('baz'), {bee: 'moo'}, 'extra']);
+    t.same(protocol.decodeResponse([buf, Buffer.from([129,163,98,101,101,163,109,111,111]), 'extra2', 'extra']), [Buffer.from('baz'), {bee: 'moo'}, 'extra2', 'extra']);
     t.end();
   });
 
@@ -214,7 +214,7 @@ test('FramesProtocol', suite => {
     var listener, socket = new ZmqRpcSocket(url);
     var request = protocol.createRequestFunctionFor(socket);
 
-    t.strictEquals(socket.pending, null);
+    t.equal(socket.pending, null);
     return Promise.all([
       new Promise((resolve, reject) => {
         listener = protocol.createRouterMessageListener(router, (reply, args) => {
@@ -222,13 +222,13 @@ test('FramesProtocol', suite => {
             t.type(reply, 'function');
             t.type(reply.requestId, Buffer);
             t.type(args, Array);
-            t.strictEquals(args.length, 5);
-            t.strictEquals(args[0], "foo");
-            t.strictEquals(args[1], -776);
-            t.strictEquals(args[2], true);
-            t.strictEquals(args[3], 1234567890);
+            t.equal(args.length, 5);
+            t.equal(args[0], "foo");
+            t.equal(args[1], -776);
+            t.equal(args[2], true);
+            t.equal(args[3], 1234567890);
             t.type(args[4], Buffer);
-            t.deepEquals(args[4], Buffer.from('bar'));
+            t.same(args[4], Buffer.from('bar'));
             reply([Buffer.from('baz'), {cat: "meow", "ary": [1,2,3]},'deadbaca',Buffer.from('lost')]);
             resolve();
           } catch(e) { reject(e); }
@@ -236,24 +236,24 @@ test('FramesProtocol', suite => {
         t.type(listener, 'function');
       }),
       Promise.resolve().then(() => {
-        t.strictEquals(socket.pending, null);
+        t.equal(socket.pending, null);
         var promise = request(["foo",-776,true,1234567890,Buffer.from('bar')]);
         t.type(socket.pending, Promise);
-        t.notStrictEquals(socket.pending, promise);
+        t.not(socket.pending, promise);
         t.throws(() => request("moo"), new Error("encode frames error: not enough arguments"));
         request(["moo",-1,false,0]).catch(err => {
           t.type(err, Error);
-          t.strictEquals(err.isCancel, undefined);
-          t.strictEquals(err.message, "ZmqRpcSocket: another request pending");
+          t.equal(err.isCancel, undefined);
+          t.equal(err.message, "ZmqRpcSocket: another request pending");
         });
         return promise.then(res => {
           t.type(res, Array);
           t.type(res.length, 3);
           t.type(res[0], Buffer);
-          t.deepEquals(res[0], Buffer.from('baz'));
-          t.deepEquals(res[1], {cat: "meow", "ary": [1,2,3]});
-          t.strictEquals(res[2], 'deadbaca');
-        })        
+          t.same(res[0], Buffer.from('baz'));
+          t.same(res[1], {cat: "meow", "ary": [1,2,3]});
+          t.equal(res[2], 'deadbaca');
+        })
       })
       .then(() => {
         return new Promise((resolve, reject) => {
@@ -263,7 +263,7 @@ test('FramesProtocol', suite => {
             if (err) return reject(err);
             router.close();
             resolve();
-          });          
+          });
         });
       })
       .then(() => t.ok(true))

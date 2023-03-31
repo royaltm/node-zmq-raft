@@ -1,4 +1,4 @@
-/* 
+/*
  *  Copyright (c) 2017 Rafał Michalski <royal@yeondir.com>
  *  License: LGPL
  */
@@ -30,14 +30,14 @@ test('IndexFile', suite => {
     .then(indexFile => {
       var filename = path.join(tempDir, '00000', '00', '00', '00000000000001.rlog');
       t.type(indexFile, IndexFile);
-      t.strictEquals(indexFile.capacity, IndexFile.DEFAULT_CAPACITY - 1);
-      t.strictEquals(indexFile.index, 1);
-      t.strictEquals(indexFile.nextIndex, 1);
-      t.strictEquals(indexFile.free, indexFile.capacity);
-      t.strictEquals(indexFile.firstAllowedIndex, 1);
-      t.strictEquals(indexFile.lastAllowedIndex, indexFile.capacity);
-      t.strictEquals(indexFile.basename, '00000000000001');
-      t.strictEquals(indexFile.filename, filename);
+      t.equal(indexFile.capacity, IndexFile.DEFAULT_CAPACITY - 1);
+      t.equal(indexFile.index, 1);
+      t.equal(indexFile.nextIndex, 1);
+      t.equal(indexFile.free, indexFile.capacity);
+      t.equal(indexFile.firstAllowedIndex, 1);
+      t.equal(indexFile.lastAllowedIndex, indexFile.capacity);
+      t.equal(indexFile.basename, '00000000000001');
+      t.equal(indexFile.filename, filename);
       t.ok(fs.existsSync(filename));
       return indexFile.close()
     })
@@ -50,32 +50,32 @@ test('IndexFile', suite => {
     .then(indexFile => {
       var filename = path.join(tempDir, '00000', '00', '01', '00000000123456.rlog');
       t.type(indexFile, IndexFile);
-      t.strictEquals(indexFile.capacity, IndexFile.DEFAULT_CAPACITY - 0x123456 % IndexFile.DEFAULT_CAPACITY);
-      t.strictEquals(indexFile.index, 0x123456);
-      t.strictEquals(indexFile.nextIndex, 0x123456);
-      t.strictEquals(indexFile.free, indexFile.capacity);
-      t.strictEquals(indexFile.firstAllowedIndex, 0x123456);
-      t.strictEquals(indexFile.lastAllowedIndex, 0x123456 + indexFile.capacity - 1);
-      t.strictEquals(indexFile.basename, '00000000123456');
-      t.strictEquals(indexFile.filename, filename);
+      t.equal(indexFile.capacity, IndexFile.DEFAULT_CAPACITY - 0x123456 % IndexFile.DEFAULT_CAPACITY);
+      t.equal(indexFile.index, 0x123456);
+      t.equal(indexFile.nextIndex, 0x123456);
+      t.equal(indexFile.free, indexFile.capacity);
+      t.equal(indexFile.firstAllowedIndex, 0x123456);
+      t.equal(indexFile.lastAllowedIndex, 0x123456 + indexFile.capacity - 1);
+      t.equal(indexFile.basename, '00000000123456');
+      t.equal(indexFile.filename, filename);
       t.ok(fs.existsSync(filename));
 
       return indexFile.append(Buffer.from([42]))
       .then(([numUnwrittenEntries, indexOfNextEntry]) => {
-        t.strictEquals(numUnwrittenEntries, 0);
-        t.strictEquals(indexOfNextEntry, 0x123457);
-        t.strictEquals(indexFile.capacity, IndexFile.DEFAULT_CAPACITY - 0x123456 % IndexFile.DEFAULT_CAPACITY);
-        t.strictEquals(indexFile.index, 0x123456);
-        t.strictEquals(indexFile.nextIndex, 0x123457);
-        t.strictEquals(indexFile.free, indexFile.capacity - 1);
-        t.strictEquals(indexFile.firstAllowedIndex, 0x123456);
-        t.strictEquals(indexFile.lastAllowedIndex, 0x123456 + indexFile.capacity - 1);
+        t.equal(numUnwrittenEntries, 0);
+        t.equal(indexOfNextEntry, 0x123457);
+        t.equal(indexFile.capacity, IndexFile.DEFAULT_CAPACITY - 0x123456 % IndexFile.DEFAULT_CAPACITY);
+        t.equal(indexFile.index, 0x123456);
+        t.equal(indexFile.nextIndex, 0x123457);
+        t.equal(indexFile.free, indexFile.capacity - 1);
+        t.equal(indexFile.firstAllowedIndex, 0x123456);
+        t.equal(indexFile.lastAllowedIndex, 0x123456 + indexFile.capacity - 1);
         return indexFile.read(0x123456, 1);
       })
       .then(entry => {
         t.type(entry, Buffer);
-        t.strictEquals(entry.length, 1);
-        t.strictEquals(entry[0], 42);
+        t.equal(entry.length, 1);
+        t.equal(entry[0], 42);
         return indexFile.close();
       });
     })
@@ -88,21 +88,21 @@ test('IndexFile', suite => {
     return new IndexFile(filename).ready()
     .then(indexFile => {
       t.type(indexFile, IndexFile);
-      t.strictEquals(indexFile.capacity, IndexFile.DEFAULT_CAPACITY - 0x123456 % IndexFile.DEFAULT_CAPACITY);
-      t.strictEquals(indexFile.index, 0x123456);
-      t.strictEquals(indexFile.nextIndex, 0x123457);
-      t.strictEquals(indexFile.free, indexFile.capacity - 1);
-      t.strictEquals(indexFile.firstAllowedIndex, 0x123456);
-      t.strictEquals(indexFile.lastAllowedIndex, 0x123456 + indexFile.capacity - 1);
-      t.strictEquals(indexFile.basename, '00000000123456');
-      t.strictEquals(indexFile.filename, filename);
+      t.equal(indexFile.capacity, IndexFile.DEFAULT_CAPACITY - 0x123456 % IndexFile.DEFAULT_CAPACITY);
+      t.equal(indexFile.index, 0x123456);
+      t.equal(indexFile.nextIndex, 0x123457);
+      t.equal(indexFile.free, indexFile.capacity - 1);
+      t.equal(indexFile.firstAllowedIndex, 0x123456);
+      t.equal(indexFile.lastAllowedIndex, 0x123456 + indexFile.capacity - 1);
+      t.equal(indexFile.basename, '00000000123456');
+      t.equal(indexFile.filename, filename);
       t.ok(fs.existsSync(filename));
 
       return indexFile.read(0x123456, 1)
       .then(entry => {
         t.type(entry, Buffer);
-        t.strictEquals(entry.length, 1);
-        t.strictEquals(entry[0], 42);
+        t.equal(entry.length, 1);
+        t.equal(entry[0], 42);
         return indexFile.destroy();
       })
       .then(() => {
@@ -120,14 +120,14 @@ test('IndexFile', suite => {
     return new IndexFile(filename).ready()
     .then(indexFile => {
       t.type(indexFile, IndexFile);
-      t.strictEquals(indexFile.capacity, IndexFile.DEFAULT_CAPACITY - 1);
-      t.strictEquals(indexFile.index, 1);
-      t.strictEquals(indexFile.nextIndex, 1);
-      t.strictEquals(indexFile.free, indexFile.capacity);
-      t.strictEquals(indexFile.firstAllowedIndex, 1);
-      t.strictEquals(indexFile.lastAllowedIndex, indexFile.capacity);
-      t.strictEquals(indexFile.basename, '00000000000001');
-      t.strictEquals(indexFile.filename, filename);
+      t.equal(indexFile.capacity, IndexFile.DEFAULT_CAPACITY - 1);
+      t.equal(indexFile.index, 1);
+      t.equal(indexFile.nextIndex, 1);
+      t.equal(indexFile.free, indexFile.capacity);
+      t.equal(indexFile.firstAllowedIndex, 1);
+      t.equal(indexFile.lastAllowedIndex, indexFile.capacity);
+      t.equal(indexFile.basename, '00000000000001');
+      t.equal(indexFile.filename, filename);
 
       for(let i = indexFile.capacity - 100; i-- > 0;) {
         entries.push(crypto.randomBytes((Math.random()*100 + 1)>>>0));
@@ -138,18 +138,18 @@ test('IndexFile', suite => {
         return indexFile.append(entry)
         .then(([numUnwrittenEntries, indexOfNextEntry]) => {
           if (numUnwrittenEntries === 1) {
-            t.strictEquals(indexOfNextEntry, indexFile.lastAllowedIndex + 1);
-            t.strictEquals(indexFile.nextIndex, indexOfNextEntry);
-            t.strictEquals(indexFile.free, 0);
+            t.equal(indexOfNextEntry, indexFile.lastAllowedIndex + 1);
+            t.equal(indexFile.nextIndex, indexOfNextEntry);
+            t.equal(indexFile.free, 0);
           }
           else {
             entries.push(entry);
-            t.strictEquals(numUnwrittenEntries, 0);
-            t.strictEquals(indexOfNextEntry, indexFile.nextIndex);
-            t.strictEquals(indexFile.capacity, IndexFile.DEFAULT_CAPACITY - 1);
-            t.strictEquals(indexFile.index, 1);
-            t.strictEquals(indexFile.nextIndex, entries.length + 1);
-            t.strictEquals(indexFile.free, indexFile.capacity - entries.length);
+            t.equal(numUnwrittenEntries, 0);
+            t.equal(indexOfNextEntry, indexFile.nextIndex);
+            t.equal(indexFile.capacity, IndexFile.DEFAULT_CAPACITY - 1);
+            t.equal(indexFile.index, 1);
+            t.equal(indexFile.nextIndex, entries.length + 1);
+            t.equal(indexFile.free, indexFile.capacity - entries.length);
             return append();
           }
         });
@@ -157,18 +157,18 @@ test('IndexFile', suite => {
 
       return indexFile.append(entries)
       .then(([numUnwrittenEntries, indexOfNextEntry]) => {
-        t.strictEquals(numUnwrittenEntries, 0);
-        t.strictEquals(indexOfNextEntry, indexFile.nextIndex);
-        t.strictEquals(indexFile.capacity, IndexFile.DEFAULT_CAPACITY - 1);
-        t.strictEquals(indexFile.index, 1);
-        t.strictEquals(indexFile.nextIndex, entries.length + 1);
-        t.strictEquals(indexFile.free, indexFile.capacity - entries.length);
+        t.equal(numUnwrittenEntries, 0);
+        t.equal(indexOfNextEntry, indexFile.nextIndex);
+        t.equal(indexFile.capacity, IndexFile.DEFAULT_CAPACITY - 1);
+        t.equal(indexFile.index, 1);
+        t.equal(indexFile.nextIndex, entries.length + 1);
+        t.equal(indexFile.free, indexFile.capacity - entries.length);
         return append();
       })
       .then(() => indexFile.readv(1, indexFile.capacity))
       .then(readv => {
         t.type(readv, Array);
-        t.strictEquals(readv.length, entries.length);
+        t.equal(readv.length, entries.length);
         entries.forEach((entry, index) => {
           t.type(readv[0], Buffer);
           t.ok(readv[index].equals(entry));
@@ -183,8 +183,8 @@ test('IndexFile', suite => {
             .on('end', () => {
               try {
                 t.ok(extractor.next().done)
-                t.strictEquals(input.length, 0);
-                t.strictEquals(entries.length, index);
+                t.equal(input.length, 0);
+                t.equal(entries.length, index);
                 resolve();
               } catch(err) { reject(err); }
             })
@@ -194,8 +194,8 @@ test('IndexFile', suite => {
                 for(;;) {
                   let {value, done} = extractor.next();
                   if (done) {
-                    t.strictEquals(input.length, 0);
-                    t.strictEquals(entries.length, index);
+                    t.equal(input.length, 0);
+                    t.equal(entries.length, index);
                   }
                   if (value === undefined) break;
                   t.type(value, Buffer);
@@ -210,7 +210,7 @@ test('IndexFile', suite => {
             .on('error', reject)
             .on('end', () => {
               try {
-                t.strictEquals(entries.length, index);
+                t.equal(entries.length, index);
                 resolve();
               } catch(err) { reject(err); }
             })
@@ -226,10 +226,10 @@ test('IndexFile', suite => {
       .then(() => indexFile.truncate(1))
       .then(() => {
         t.type(indexFile, IndexFile);
-        t.strictEquals(indexFile.capacity, IndexFile.DEFAULT_CAPACITY - 1);
-        t.strictEquals(indexFile.index, 1);
-        t.strictEquals(indexFile.nextIndex, 1);
-        t.strictEquals(indexFile.free, indexFile.capacity);
+        t.equal(indexFile.capacity, IndexFile.DEFAULT_CAPACITY - 1);
+        t.equal(indexFile.index, 1);
+        t.equal(indexFile.nextIndex, 1);
+        t.equal(indexFile.free, indexFile.capacity);
         t.ok(fs.existsSync(filename));
         return indexFile.destroy()
       })

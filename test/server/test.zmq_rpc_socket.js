@@ -1,4 +1,4 @@
-/* 
+/*
  *  Copyright (c) 2016 Rafał Michalski <royal@yeondir.com>
  *  License: LGPL
  */
@@ -23,7 +23,7 @@ test('router', suite => {
     t.plan(19);
     var [router, url] = createZmqSocket('router');
     var socket = new ZmqRpcSocket(url);
-    t.strictEquals(socket.pending, null);
+    t.equal(socket.pending, null);
     return Promise.all([
       new Promise((resolve, reject) => {
         router.on('frames', (frames) => {
@@ -32,9 +32,9 @@ test('router', suite => {
             t.type(src, Buffer);
             t.type(id, Buffer);
             t.type(msg, Buffer);
-            t.notStrictEquals(src.length, 0);
-            t.notStrictEquals(id.length, 0);
-            t.strictEquals(msg.toString(), "foo");
+            t.not(src.length, 0);
+            t.not(id.length, 0);
+            t.equal(msg.toString(), "foo");
             router.send([src, id, "foo", "bar"]);
             router.send([src, id, "ala"]);
             router.send([src, crypto.randomBytes(10), "kota"]);
@@ -44,22 +44,22 @@ test('router', suite => {
         })
       }),
       Promise.resolve().then(() => {
-        t.strictEquals(socket.pending, null);
+        t.equal(socket.pending, null);
         var promise = socket.request("foo");
-        t.strictEquals(socket.pending, promise);
+        t.equal(socket.pending, promise);
         socket.request("moo").catch(err => {
           t.type(err, Error);
-          t.strictEquals(err.isCancel, undefined);
-          t.strictEquals(err.message, "ZmqRpcSocket: another request pending");
+          t.equal(err.isCancel, undefined);
+          t.equal(err.message, "ZmqRpcSocket: another request pending");
         });
         return promise.then(res => {
           t.type(res, Array);
           t.type(res.length, 2);
           t.type(res[0], Buffer);
           t.type(res[1], Buffer);
-          t.strictEquals(res[0].toString(), "foo");
-          t.strictEquals(res[1].toString(), "bar");
-        })        
+          t.equal(res[0].toString(), "foo");
+          t.equal(res[1].toString(), "bar");
+        })
       })
       .then(() => {
         return new Promise((resolve, reject) => {
@@ -68,7 +68,7 @@ test('router', suite => {
             if (err) return reject(err);
             router.close();
             resolve();
-          });          
+          });
         });
       })
       .then(() => t.ok(true))
@@ -81,14 +81,14 @@ test('router', suite => {
     router.unbindSync(url);
     router.close();
     var socket = new ZmqRpcSocket(url);
-    t.strictEquals(socket.pending, null);
-    t.strictEquals(socket.reset(), socket);
+    t.equal(socket.pending, null);
+    t.equal(socket.reset(), socket);
     var start = Date.now();
     return Promise.all([
       socket.request("foo").catch(err => {
         t.type(err, RpcCancelError);
-        t.strictEquals(err.isCancel, true);
-        t.strictEquals(err.message, "request cancelled");
+        t.equal(err.isCancel, true);
+        t.equal(err.message, "request cancelled");
         t.ok(Date.now() - start > 100);
       })
       .then(() => {
@@ -97,8 +97,8 @@ test('router', suite => {
       }),
       delay(100).then(() => {
         t.type(socket.pending, Promise);
-        t.strictEquals(socket.reset(), socket);
-        t.strictEquals(socket.pending, null);
+        t.equal(socket.reset(), socket);
+        t.equal(socket.pending, null);
       })
     ]).catch(t.threw);
   });
@@ -113,24 +113,24 @@ test('router', suite => {
     return Promise.all([
       socket.request("foo").catch(err => {
         t.type(err, RpcCancelError);
-        t.strictEquals(err.isCancel, true);
-        t.strictEquals(err.message, "request cancelled");
+        t.equal(err.isCancel, true);
+        t.equal(err.message, "request cancelled");
         t.ok(Date.now() - start >= 100);
       }),
       delay(100).then(() => {
         t.type(socket.pending, Promise);
         var promise = socket.reset().request("bar");
-        t.strictEquals(socket.pending, promise);
+        t.equal(socket.pending, promise);
         return Promise.all([
           promise.then(res => {
             t.type(res, Array);
             t.type(res.length, 1);
             t.type(res[0], Buffer);
-            t.strictEquals(res[0].toString(), "baz");
+            t.equal(res[0].toString(), "baz");
           }),
           delay(500).then(() => new Promise((resolve, reject) => {
             var [router2, url2] = createZmqSocket('router', url);
-            t.strictEquals(url, url2);
+            t.equal(url, url2);
             router = router2;
             var ignoreTimes = 3;
             router.on('frames', (frames) => {
@@ -140,9 +140,9 @@ test('router', suite => {
                 t.type(src, Buffer);
                 t.type(id, Buffer);
                 t.type(msg, Buffer);
-                t.notStrictEquals(src.length, 0);
-                t.notStrictEquals(id.length, 0);
-                t.strictEquals(msg.toString(), "bar");
+                t.not(src.length, 0);
+                t.not(id.length, 0);
+                t.equal(msg.toString(), "bar");
                 router.send([src, id, "baz"]);
                 resolve();
               } catch(e) { reject(e); }
@@ -157,7 +157,7 @@ test('router', suite => {
             if (err) return reject(err);
             router.close();
             resolve();
-          });          
+          });
         });
       })
       .then(() => t.ok(true))
@@ -168,7 +168,7 @@ test('router', suite => {
     t.plan(1+7*2+2+4+1);
     var [router, url] = createZmqSocket('router');
     var socket = new ZmqRpcSocket(url, {timeout: 75});
-    t.strictEquals(socket.timeoutMs, 75);
+    t.equal(socket.timeoutMs, 75);
     var start = Date.now();
     var numrequests = 0;
     return Promise.all([
@@ -179,13 +179,13 @@ test('router', suite => {
             t.type(src, Buffer);
             t.type(id, Buffer);
             t.type(msg, Buffer);
-            t.notStrictEquals(src.length, 0);
-            t.notStrictEquals(id.length, 0);
-            t.strictEquals(msg.toString(), "foo");
+            t.not(src.length, 0);
+            t.not(id.length, 0);
+            t.equal(msg.toString(), "foo");
             t.type(socket.pending, Promise);
             if (++numrequests == 2) {
-              t.strictEquals(socket.reset(), socket);
-              t.strictEquals(socket.pending, null);
+              t.equal(socket.reset(), socket);
+              t.equal(socket.pending, null);
               resolve();
             }
           } catch(e) { reject(e); }
@@ -193,8 +193,8 @@ test('router', suite => {
       }),
       socket.request("foo").catch(err => {
         t.type(err, RpcCancelError);
-        t.strictEquals(err.isCancel, true);
-        t.strictEquals(err.message, "request cancelled");
+        t.equal(err.isCancel, true);
+        t.equal(err.message, "request cancelled");
         t.ok(Date.now() - start >= 75);
       })
       .then(() => {
@@ -204,7 +204,7 @@ test('router', suite => {
             if (err) return reject(err);
             router.close();
             resolve();
-          });          
+          });
         });
       })
       .then(() => t.ok(true))

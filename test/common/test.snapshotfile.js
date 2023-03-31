@@ -1,4 +1,4 @@
-/* 
+/*
  *  Copyright (c) 2017 Rafał Michalski <royal@yeondir.com>
  *  License: LGPL
  */
@@ -34,17 +34,17 @@ test('SnapshotFile', suite => {
     return snapshot.ready()
     .then(snapshot => {
       t.type(snapshot, SnapshotFile);
-      t.strictEquals(snapshot.filename, path.join(tempDir, 'snap'));
+      t.equal(snapshot.filename, path.join(tempDir, 'snap'));
       t.type(snapshot.dataOffset, 'number');
       t.ok(snapshot.dataOffset > 44);
-      t.strictEquals(snapshot.logIndex, 42);
-      t.strictEquals(snapshot.logTerm, 100);
-      t.strictEquals(snapshot.dataSize, data.length);
-      t.strictEquals(snapshot.isClosed, false);
+      t.equal(snapshot.logIndex, 42);
+      t.equal(snapshot.logTerm, 100);
+      t.equal(snapshot.dataSize, data.length);
+      t.equal(snapshot.isClosed, false);
       return snapshot.write(data, 0, data.length);
     })
     .then(written => {
-      t.strictEquals(written, data.length);
+      t.equal(written, data.length);
       return snapshot.sync();
     })
     .then(() => snapshot.read(0, data.length))
@@ -54,7 +54,7 @@ test('SnapshotFile', suite => {
       return snapshot.close();
     })
     .then(() => {
-      t.strictEquals(snapshot.isClosed, true);
+      t.equal(snapshot.isClosed, true);
     }).catch(t.threw);
   });
 
@@ -65,28 +65,28 @@ test('SnapshotFile', suite => {
     return snapshot.ready()
     .then(snapshot => {
       t.type(snapshot, SnapshotFile);
-      t.strictEquals(snapshot.filename, path.join(tempDir, 'snap'));
+      t.equal(snapshot.filename, path.join(tempDir, 'snap'));
       t.type(snapshot.dataOffset, 'number');
       t.ok(snapshot.dataOffset > 44);
-      t.strictEquals(snapshot.logIndex, 42);
-      t.strictEquals(snapshot.logTerm, 100);
-      t.strictEquals(snapshot.dataSize, data.length);
-      t.strictEquals(snapshot.isClosed, false);
+      t.equal(snapshot.logIndex, 42);
+      t.equal(snapshot.logTerm, 100);
+      t.equal(snapshot.dataSize, data.length);
+      t.equal(snapshot.isClosed, false);
       var buffer = Buffer.allocUnsafeSlow(data.length);
       return snapshot.read(0, data.length, buffer)
       .then(buf => {
         t.type(buf, Buffer);
-        t.strictEquals(buf, buffer);
-        t.strictEquals(buffer.equals(data), true);
+        t.equal(buf, buffer);
+        t.equal(buffer.equals(data), true);
         return snapshot.read(0, 25, buffer, 100)
       })
       .then(buf => {
         t.type(buf, Buffer);
-        t.notStrictEquals(buf, buffer);
-        t.strictEquals(buf.buffer, buffer.buffer);
-        t.strictEquals(buf.offset, 100);
-        t.strictEquals(buf.length, 25);
-        t.strictEquals(buf.compare(data, 0, 25), 0);
+        t.not(buf, buffer);
+        t.equal(buf.buffer, buffer.buffer);
+        t.equal(buf.offset, 100);
+        t.equal(buf.length, 25);
+        t.equal(buf.compare(data, 0, 25), 0);
       });
     })
     .then(() => new Promise((resolve, reject) => {
@@ -94,7 +94,7 @@ test('SnapshotFile', suite => {
       .on('data', chunk => {
         try {
           t.type(chunk, Buffer);
-          t.strictEquals(chunk.compare(data, 100), 0);
+          t.equal(chunk.compare(data, 100), 0);
         } catch(err) { reject(err) }
       });
     }))
@@ -107,11 +107,11 @@ test('SnapshotFile', suite => {
       t.type(data, Buffer);
       var meta = mp.decode(data);
       t.type(meta, Object);
-      t.deepEquals(Object.keys(meta), ['created', 'hostname']);
+      t.same(Object.keys(meta), ['created', 'hostname']);
       return snapshot.close();
     })
     .then(() => {
-      t.strictEquals(snapshot.isClosed, true);
+      t.equal(snapshot.isClosed, true);
     }).catch(t.threw);
   });
 
@@ -122,26 +122,26 @@ test('SnapshotFile', suite => {
     return snapshot.ready()
     .then(snapshot => {
       t.type(snapshot, SnapshotFile);
-      t.strictEquals(snapshot.filename, path.join(tempDir, 'snap2'));
+      t.equal(snapshot.filename, path.join(tempDir, 'snap2'));
       t.type(snapshot.dataOffset, 'number');
       t.ok(snapshot.dataOffset > 44);
-      t.strictEquals(snapshot.logIndex, 77);
-      t.strictEquals(snapshot.logTerm, 1);
-      t.strictEquals(snapshot.dataSize, 100*data.length);
-      t.strictEquals(snapshot.isClosed, false);
-      t.deepEquals(fs.readdirSync(tempDir), ['snap', 'snap2']);
+      t.equal(snapshot.logIndex, 77);
+      t.equal(snapshot.logTerm, 1);
+      t.equal(snapshot.dataSize, 100*data.length);
+      t.equal(snapshot.isClosed, false);
+      t.same(fs.readdirSync(tempDir), ['snap', 'snap2']);
       return snapshot.replace(path.join(tempDir, 'snap'));
     })
     .then(name => {
-      t.strictEquals(name, path.join(tempDir, 'snap'))
-      t.strictEquals(snapshot.logIndex, 77);
-      t.strictEquals(snapshot.logTerm, 1);
-      t.strictEquals(snapshot.dataSize, 100*data.length);
-      t.strictEquals(snapshot.filename, path.join(tempDir, 'snap'));
+      t.equal(name, path.join(tempDir, 'snap'))
+      t.equal(snapshot.logIndex, 77);
+      t.equal(snapshot.logTerm, 1);
+      t.equal(snapshot.dataSize, 100*data.length);
+      t.equal(snapshot.filename, path.join(tempDir, 'snap'));
       var files = fs.readdirSync(tempDir);
-      t.strictEquals(files.length, 2);
-      t.strictEquals(files[0], 'snap');
-      t.matches(files[1], /^snap-\d{4}-\d\d-\d\d-\d{6}-\d{3}/);
+      t.equal(files.length, 2);
+      t.equal(files[0], 'snap');
+      t.match(files[1], /^snap-\d{4}-\d\d-\d\d-\d{6}-\d{3}/);
       return snapshot.read(data.length, data.length);
     })
     .then(buffer => {
@@ -150,7 +150,7 @@ test('SnapshotFile', suite => {
        return snapshot.close();
     })
     .then(() => {
-      t.strictEquals(snapshot.isClosed, true);
+      t.equal(snapshot.isClosed, true);
     }).catch(t.threw);
   });
 
