@@ -24,6 +24,8 @@ program
   .option('-t, --timeout <secs>', 'How long to wait for a peer to respond (in seconds)')
   .parse(process.argv);
 
+const opts = program.opts();
+
 if (program.args.length === 0) {
   console.error("zmq-monitor: please provide at least one cluster seed url")
   program.help();
@@ -32,16 +34,16 @@ if (program.args.length === 0) {
 const options = {
     // timeout: 5000,
     // serverElectionGraceDelay: 15000,
-    secret: program.cluster,
-    urls: program.args
+    secret: opts.cluster,
+    urls: opts.args
 };
 
-if (program.urlsOnly) {
+if (opts.urlsOnly) {
   options.urlsOnly = true;
 }
 
-if (program.peers) {
-  const ids = program.peers
+if (opts.peers) {
+  const ids = opts.peers
       , urls = options.urls;
 
   if (ids.length !== urls.length) {
@@ -53,8 +55,8 @@ if (program.peers) {
 
 try {
   function validateSeconds(name, min) {
-    if (name in program) {
-      let value = parseFloat(program[name]);
+    if (name in opts) {
+      let value = parseFloat(opts[name]);
       if (!Number.isFinite(value)) throw new TypeError(`${name} must be a number of seconds`);
       if (min !== undefined && value < min) throw new TypeError(`${name} must be >= ${min}`);
       return value * 1000;
