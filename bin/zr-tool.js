@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/* 
+/*
  *  Copyright (c) 2017 Rafał Michalski <royal@yeondir.com>
  */
 "use strict";
@@ -24,7 +24,7 @@ const pkg = require('../package.json');
 
 const raft = require('..');
 
-const { 
+const {
       FTYPE_DIRECTORY
     , FTYPE_FILE
     , FTYPE_INDEXFILE
@@ -77,13 +77,15 @@ program.command('inspect <path>').alias('*')
 
 program.parse(process.argv);
 
+const opts = program.opts()
+
 if (program.args.length !== 2) program.help();
 
 function run(command, path, options) {
   return Promise.resolve().then(() => {
-    if (program.output) {
+    if (opts.output) {
       return new Promise((resolve, reject) => {
-        outstrm = fs.createWriteStream(program.output)
+        outstrm = fs.createWriteStream(opts.output)
         .on('error', reject)
         .on('open', resolve);
       });
@@ -155,7 +157,7 @@ function inspect(file) {
 }
 
 function openFileLog(dir) {
-  return new FileLog(path.join(dir, program.log), path.join(dir, program.snapshot), true).ready();
+  return new FileLog(path.join(dir, opts.log), path.join(dir, opts.snapshot), true).ready();
 }
 
 function inspectFileLog(dir, stat) {

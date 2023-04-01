@@ -1,4 +1,4 @@
-/* 
+/*
  *  Copyright (c) 2016-2017 Rafał Michalski <royal@yeondir.com>
  *  License: LGPL
  */
@@ -32,21 +32,21 @@ test('router', suite => {
             let [src, msg] = args;
             t.type(src, Buffer);
             t.type(msg, Buffer);
-            t.notStrictEquals(src.length, 0);
-            t.strictEquals(msg.toString(), "foo");
+            t.not(src.length, 0);
+            t.equal(msg.toString(), "foo");
             router.send([src, "foo", "bar"]);
             resolve();
           } catch(e) { reject(e); }
         })
       }),
       new Promise((resolve, reject) => {
-        t.strictEquals(socket.send("foo"), false);
-        t.strictEquals(socket._zmq.pending, true);
+        t.equal(socket.send("foo"), false);
+        t.equal(socket._zmq.pending, true);
         socket.connect(url);
         socket.on('drain', () => {
           try {
-            t.strictEquals(socket.send("foo"), true);
-            t.strictEquals(socket._zmq.pending, false);
+            t.equal(socket.send("foo"), true);
+            t.equal(socket._zmq.pending, false);
           } catch(err) { reject(err); }
         });
         socket.on('frames', (frames) => {
@@ -55,8 +55,8 @@ test('router', suite => {
             t.type(frames.length, 2);
             t.type(frames[0], Buffer);
             t.type(frames[1], Buffer);
-            t.strictEquals(frames[0].toString(), "foo");
-            t.strictEquals(frames[1].toString(), "bar");
+            t.equal(frames[0].toString(), "foo");
+            t.equal(frames[1].toString(), "bar");
             resolve();
           } catch(err) { reject(err); }
         });
@@ -65,12 +65,12 @@ test('router', suite => {
         router.unbindSync(url);
         router.close();
         return delay(100).then(() => {
-          t.strictEquals(socket.send("bar"), true);
-          t.strictEquals(socket._zmq.pending, false);
-          t.strictEquals(socket.send("baz"), false);
-          t.strictEquals(socket._zmq.pending, true);
-          t.strictEquals(socket.cancelSend(), socket);
-          t.strictEquals(socket._zmq.pending, false);
+          t.equal(socket.send("bar"), true);
+          t.equal(socket._zmq.pending, false);
+          t.equal(socket.send("baz"), false);
+          t.equal(socket._zmq.pending, true);
+          t.equal(socket.cancelSend(), socket);
+          t.equal(socket._zmq.pending, false);
           socket.disconnect(url);
           socket.close();
         });
@@ -103,15 +103,15 @@ test('router', suite => {
             t.type(msg3, Buffer);
             t.type(msg4, Buffer);
             t.type(msg5, Buffer);
-            t.notStrictEquals(src.length, 0);
-            t.strictEquals(msg1.toString(), "ala");
-            t.strictEquals(msg2.toString(), "ma");
-            t.strictEquals(msg3.toString(), "kota");
+            t.not(src.length, 0);
+            t.equal(msg1.toString(), "ala");
+            t.equal(msg2.toString(), "ma");
+            t.equal(msg3.toString(), "kota");
             let x = readBufUIntLE(msg4);
             t.type(x, 'number');
-            t.strictEquals(sentmap.get(x), readBufUIntLE(msg5));
+            t.equal(sentmap.get(x), readBufUIntLE(msg5));
             sentmap.delete(x);
-            t.strictEquals(x, reqcount);
+            t.equal(x, reqcount);
             if (reqcount++ === 0) {
               asyncTimes(total, (n) => {
                 let len = Math.random()*100000>>>0;
@@ -124,8 +124,8 @@ test('router', suite => {
         })
       }),
       new Promise((resolve, reject) => {
-        t.strictEquals(socket.send(["ala","ma",Buffer.from("kota"),allocBufUIntLE(0),allocBufUIntLE(0)]), true);
-        t.strictEquals(socket._zmq.pending, false);
+        t.equal(socket.send(["ala","ma",Buffer.from("kota"),allocBufUIntLE(0),allocBufUIntLE(0)]), true);
+        t.equal(socket._zmq.pending, false);
         var slab = crypto.randomBytes(150000);
         var busy = false, queue = [];
         var send = () => {
@@ -153,9 +153,9 @@ test('router', suite => {
             t.type(frames[2], Buffer);
             t.type(frames[3], Buffer);
             t.type(frames[4], Buffer);
-            t.strictEquals(frames[0].toString(), "a");
-            t.strictEquals(frames[1].toString(), "kot");
-            t.strictEquals(frames[2].toString(), "ma");
+            t.equal(frames[0].toString(), "a");
+            t.equal(frames[1].toString(), "kot");
+            t.equal(frames[2].toString(), "ma");
             var x = readBufUIntLE(frames[3]);
             t.type(x, 'number');
             queue.push(["ala","ma",Buffer.from("kota"),allocBufUIntLE(x),allocBufUIntLE(frames[4].length),slab]);

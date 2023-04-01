@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/* 
+/*
  *  Copyright (c) 2016-2018 Rafał Michalski <royal@yeondir.com>
  */
 "use strict";
@@ -31,7 +31,9 @@ program
   .option('--ns [namespace]', 'raft config root namespace', 'raft')
   .parse(process.argv);
 
-readConfig(program.config, program.ns).then(config => {
+const opts = program.opts()
+
+readConfig(opts.config, opts.ns).then(config => {
   if (program.args.length >= 1) {
     config.id = program.args[0];
   }
@@ -50,14 +52,14 @@ readConfig(program.config, program.ns).then(config => {
     }
   }
 
-  if (program.bind) {
-    setRouterBindUrl(config, program.bind);
+  if (opts.bind) {
+    setRouterBindUrl(config, opts.bind);
   }
-  if (program.pub) {
-    setBroadcastUrl(config, program.pub);
+  if (opts.pub) {
+    setBroadcastUrl(config, opts.pub);
   }
-  if (program.www) {
-    setWebmonitorUrl(config, program.www);
+  if (opts.www) {
+    setWebmonitorUrl(config, opts.www);
   }
 
   return raft.server.builder.build(config)

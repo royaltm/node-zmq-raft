@@ -1,4 +1,4 @@
-/* 
+/*
  *  Copyright (c) 2016-2017 Rafał Michalski <royal@yeondir.com>
  *  License: LGPL
  */
@@ -30,46 +30,46 @@ test('FilePersistence', suite => {
     t.type(persistence, FilePersistence);
     t.type(persistence.ready, 'function');
     return persistence.ready().then(() => {
-      t.strictEquals(persistence.foo, 1);
-      t.strictEquals(persistence.bar, 'baz');
-      t.strictEquals(persistence.baz, null);
-      t.deepEquals(persistence[Symbol.for('byteSize')], 0);
-      t.deepEquals(persistence.defaultData, {foo: 1, bar: 'baz', baz: null});
-      t.deepEquals(persistence[Symbol.for('data')], {foo: 1, bar: 'baz', baz: null});
+      t.equal(persistence.foo, 1);
+      t.equal(persistence.bar, 'baz');
+      t.equal(persistence.baz, null);
+      t.same(persistence[Symbol.for('byteSize')], 0);
+      t.same(persistence.defaultData, {foo: 1, bar: 'baz', baz: null});
+      t.same(persistence[Symbol.for('data')], {foo: 1, bar: 'baz', baz: null});
 
       return persistence.update({foo: 2});
     }).then(() => {
-      t.strictEquals(persistence.foo, 2);
-      t.strictEquals(persistence.bar, 'baz');
-      t.strictEquals(persistence[Symbol.for('byteSize')], 6);
-      t.deepEquals(persistence.defaultData, {foo: 1, bar: 'baz', baz: null});
-      t.deepEquals(persistence[Symbol.for('data')], {foo: 2, bar: 'baz', baz: null});
+      t.equal(persistence.foo, 2);
+      t.equal(persistence.bar, 'baz');
+      t.equal(persistence[Symbol.for('byteSize')], 6);
+      t.same(persistence.defaultData, {foo: 1, bar: 'baz', baz: null});
+      t.same(persistence[Symbol.for('data')], {foo: 2, bar: 'baz', baz: null});
 
       return persistence.update({baz: [1,2,3]});
     }).then(() => {
-      t.strictEquals(persistence.foo, 2);
-      t.strictEquals(persistence.bar, 'baz');
-      t.deepEquals(persistence.baz, [1,2,3]);
-      t.strictEquals(persistence[Symbol.for('byteSize')], 15);
-      t.deepEquals(persistence.defaultData, {foo: 1, bar: 'baz', baz: null});
-      t.deepEquals(persistence[Symbol.for('data')], {foo: 2, bar: 'baz', baz: [1,2,3]});
+      t.equal(persistence.foo, 2);
+      t.equal(persistence.bar, 'baz');
+      t.same(persistence.baz, [1,2,3]);
+      t.equal(persistence[Symbol.for('byteSize')], 15);
+      t.same(persistence.defaultData, {foo: 1, bar: 'baz', baz: null});
+      t.same(persistence[Symbol.for('data')], {foo: 2, bar: 'baz', baz: [1,2,3]});
 
       return Promise.all([
         persistence.update({foo: 42, foe: 'fee'}),
         persistence.update({baz: [1,2,3,4]})
       ]);
     }).then(() => {
-      t.strictEquals(persistence.foo, 42);
-      t.strictEquals(persistence.bar, 'baz');
-      t.deepEquals(persistence.baz, [1,2,3,4]);
-      t.strictEquals(persistence.foe, undefined);
-      t.strictEquals(persistence[Symbol.for('byteSize')], 31);
-      t.deepEquals(persistence.defaultData, {foo: 1, bar: 'baz', baz: null});
-      t.deepEquals(persistence[Symbol.for('data')], {foo: 42, bar: 'baz', baz: [1,2,3,4]});
+      t.equal(persistence.foo, 42);
+      t.equal(persistence.bar, 'baz');
+      t.same(persistence.baz, [1,2,3,4]);
+      t.equal(persistence.foe, undefined);
+      t.equal(persistence[Symbol.for('byteSize')], 31);
+      t.same(persistence.defaultData, {foo: 1, bar: 'baz', baz: null});
+      t.same(persistence[Symbol.for('data')], {foo: 42, bar: 'baz', baz: [1,2,3,4]});
 
       return persistence.close();
     }).then(() => {
-      t.strictEquals(fs.statSync(persistence.filename).size, 31);
+      t.equal(fs.statSync(persistence.filename).size, 31);
     })
     .then(() => t.ok(true)).catch(t.threw);
   });
@@ -80,27 +80,27 @@ test('FilePersistence', suite => {
     t.type(persistence, FilePersistence);
     t.type(persistence.ready, 'function');
     return persistence.ready().then(() => {
-      t.strictEquals(persistence.foo, 42);
-      t.strictEquals(persistence.bar, 'baz');
-      t.deepEquals(persistence.baz, [1,2,3,4]);
-      t.strictEquals(persistence.foe, undefined);
-      t.strictEquals(persistence[Symbol.for('byteSize')], 31);
-      t.deepEquals(persistence.defaultData, {foo: 1, bar: 'baz', baz: null});
-      t.deepEquals(persistence[Symbol.for('data')], {foo: 42, bar: 'baz', baz: [1,2,3,4]});
+      t.equal(persistence.foo, 42);
+      t.equal(persistence.bar, 'baz');
+      t.same(persistence.baz, [1,2,3,4]);
+      t.equal(persistence.foe, undefined);
+      t.equal(persistence[Symbol.for('byteSize')], 31);
+      t.same(persistence.defaultData, {foo: 1, bar: 'baz', baz: null});
+      t.same(persistence[Symbol.for('data')], {foo: 42, bar: 'baz', baz: [1,2,3,4]});
 
       return persistence.update({foe: 'oof', foo: 7});
     }).then(() => {
-      t.strictEquals(persistence.foo, 7);
-      t.strictEquals(persistence.bar, 'baz');
-      t.deepEquals(persistence.baz, [1,2,3,4]);
-      t.strictEquals(persistence.foe, undefined);
-      t.strictEquals(persistence[Symbol.for('byteSize')], 37);
-      t.deepEquals(persistence.defaultData, {foo: 1, bar: 'baz', baz: null});
-      t.deepEquals(persistence[Symbol.for('data')], {foo: 7, bar: 'baz', baz: [1,2,3,4]});
+      t.equal(persistence.foo, 7);
+      t.equal(persistence.bar, 'baz');
+      t.same(persistence.baz, [1,2,3,4]);
+      t.equal(persistence.foe, undefined);
+      t.equal(persistence[Symbol.for('byteSize')], 37);
+      t.same(persistence.defaultData, {foo: 1, bar: 'baz', baz: null});
+      t.same(persistence[Symbol.for('data')], {foo: 7, bar: 'baz', baz: [1,2,3,4]});
 
       return persistence.close();
     }).then(() => {
-      t.strictEquals(fs.statSync(persistence.filename).size, 37);
+      t.equal(fs.statSync(persistence.filename).size, 37);
     })
     .then(() => t.ok(true)).catch(t.threw);
   });
@@ -111,27 +111,27 @@ test('FilePersistence', suite => {
     t.type(persistence, FilePersistence);
     t.type(persistence.ready, 'function');
     return persistence.ready().then(() => {
-      t.strictEquals(persistence.foo, 7);
-      t.strictEquals(persistence.bar, 'baz');
-      t.deepEquals(persistence.baz, [1,2,3,4]);
-      t.strictEquals(persistence.foe, undefined);
-      t.strictEquals(persistence[Symbol.for('byteSize')], 37);
-      t.deepEquals(persistence.defaultData, {foo: 1, bar: 'baz', baz: null});
-      t.deepEquals(persistence[Symbol.for('data')], {foo: 7, bar: 'baz', baz: [1,2,3,4]});
+      t.equal(persistence.foo, 7);
+      t.equal(persistence.bar, 'baz');
+      t.same(persistence.baz, [1,2,3,4]);
+      t.equal(persistence.foe, undefined);
+      t.equal(persistence[Symbol.for('byteSize')], 37);
+      t.same(persistence.defaultData, {foo: 1, bar: 'baz', baz: null});
+      t.same(persistence[Symbol.for('data')], {foo: 7, bar: 'baz', baz: [1,2,3,4]});
 
       return persistence.rotate({foo: 123456});
     }).then(() => {
-      t.strictEquals(persistence.foo, 123456);
-      t.strictEquals(persistence.bar, 'baz');
-      t.deepEquals(persistence.baz, [1,2,3,4]);
-      t.strictEquals(persistence.foe, undefined);
-      t.strictEquals(persistence[Symbol.for('byteSize')], 27);
-      t.deepEquals(persistence.defaultData, {foo: 1, bar: 'baz', baz: null});
-      t.deepEquals(persistence[Symbol.for('data')], {foo: 123456, bar: 'baz', baz: [1,2,3,4]});
+      t.equal(persistence.foo, 123456);
+      t.equal(persistence.bar, 'baz');
+      t.same(persistence.baz, [1,2,3,4]);
+      t.equal(persistence.foe, undefined);
+      t.equal(persistence[Symbol.for('byteSize')], 27);
+      t.same(persistence.defaultData, {foo: 1, bar: 'baz', baz: null});
+      t.same(persistence[Symbol.for('data')], {foo: 123456, bar: 'baz', baz: [1,2,3,4]});
 
       return persistence.close();
     }).then(() => {
-      t.strictEquals(fs.statSync(persistence.filename).size, 27);
+      t.equal(fs.statSync(persistence.filename).size, 27);
     })
     .then(() => t.ok(true)).catch(t.threw);
   });
@@ -144,13 +144,13 @@ test('FilePersistence', suite => {
     t.type(persistence, FilePersistence);
     t.type(persistence.ready, 'function');
     return persistence.ready().then(() => {
-      t.strictEquals(persistence.foo, 123456);
-      t.strictEquals(persistence.bar, 'baz');
-      t.deepEquals(persistence.baz, [1,2,3,4]);
-      t.strictEquals(persistence.foe, undefined);
-      t.strictEquals(persistence[Symbol.for('byteSize')], 27);
-      t.deepEquals(persistence.defaultData, {foo: 1, bar: 'baz', baz: null});
-      t.deepEquals(persistence[Symbol.for('data')], {foo: 123456, bar: 'baz', baz: [1,2,3,4]});
+      t.equal(persistence.foo, 123456);
+      t.equal(persistence.bar, 'baz');
+      t.same(persistence.baz, [1,2,3,4]);
+      t.equal(persistence.foe, undefined);
+      t.equal(persistence[Symbol.for('byteSize')], 27);
+      t.same(persistence.defaultData, {foo: 1, bar: 'baz', baz: null});
+      t.same(persistence[Symbol.for('data')], {foo: 123456, bar: 'baz', baz: [1,2,3,4]});
 
       var bytesize = 0;
       var expectedFoo = 123456 + 5;
@@ -159,19 +159,19 @@ test('FilePersistence', suite => {
           bytesize = persistence[Symbol.for('byteSize')];
           return persistence.update({foo: persistence.foo + 1, bar: bigString}).then(next);
         } else {
-          t.strictEquals(persistence.foo, expectedFoo);
-          t.strictEquals(persistence.bar, bigString);
-          t.deepEquals(persistence.baz, [1,2,3,4]);
-          t.strictEquals(persistence.foe, undefined);
-          t.strictEquals(persistence[Symbol.for('byteSize')], 131100);
-          t.deepEquals(persistence.defaultData, {foo: 1, bar: 'baz', baz: null});
-          t.deepEquals(persistence[Symbol.for('data')], {foo: expectedFoo, bar: bigString, baz: [1,2,3,4]});
+          t.equal(persistence.foo, expectedFoo);
+          t.equal(persistence.bar, bigString);
+          t.same(persistence.baz, [1,2,3,4]);
+          t.equal(persistence.foe, undefined);
+          t.equal(persistence[Symbol.for('byteSize')], 131100);
+          t.same(persistence.defaultData, {foo: 1, bar: 'baz', baz: null});
+          t.same(persistence[Symbol.for('data')], {foo: expectedFoo, bar: bigString, baz: [1,2,3,4]});
           return persistence.close();
         }
       };
       return next();
     }).then(() => {
-      t.strictEquals(fs.statSync(persistence.filename).size, 131100);
+      t.equal(fs.statSync(persistence.filename).size, 131100);
     })
     .then(() => t.ok(true)).catch(t.threw);
   });

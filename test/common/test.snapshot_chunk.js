@@ -1,4 +1,4 @@
-/* 
+/*
  *  Copyright (c) 2016-2017 Rafał Michalski <royal@yeondir.com>
  *  License: LGPL
  */
@@ -20,51 +20,51 @@ test('SnapshotChunk', t => {
   var chunk = new SnapshotChunk(buf, 1, 2, 3, 4);
   t.type(chunk, SnapshotChunk);
   t.type(chunk, Buffer);
-  t.notStrictEquals(chunk, buf);
-  t.strictEquals(chunk.buffer, buf.buffer);
-  t.strictEquals(chunk.byteOffset, buf.byteOffset);
-  t.strictEquals(chunk.byteLength, buf.byteLength);
-  t.strictEquals(chunk.isFirstChunk, false);
-  t.strictEquals(chunk.isLastChunk, true);
-  t.strictEquals(SnapshotChunk.isSnapshotChunk(chunk), true);
-  t.strictEquals(SnapshotChunk.isSnapshotChunk(buf), false);
-  t.strictEquals(chunk.isSnapshotChunk, true);
-  t.strictEquals(buf.isSnapshotChunk, undefined);
-  t.strictEquals(chunk.logIndex, 1);
-  t.strictEquals(chunk.snapshotByteOffset, 2);
-  t.strictEquals(chunk.snapshotTotalLength, 3);
-  t.strictEquals(chunk.logTerm, 4);
+  t.not(chunk, buf);
+  t.equal(chunk.buffer, buf.buffer);
+  t.equal(chunk.byteOffset, buf.byteOffset);
+  t.equal(chunk.byteLength, buf.byteLength);
+  t.equal(chunk.isFirstChunk, false);
+  t.equal(chunk.isLastChunk, true);
+  t.equal(SnapshotChunk.isSnapshotChunk(chunk), true);
+  t.equal(SnapshotChunk.isSnapshotChunk(buf), false);
+  t.equal(chunk.isSnapshotChunk, true);
+  t.equal(buf.isSnapshotChunk, undefined);
+  t.equal(chunk.logIndex, 1);
+  t.equal(chunk.snapshotByteOffset, 2);
+  t.equal(chunk.snapshotTotalLength, 3);
+  t.equal(chunk.logTerm, 4);
 
   chunk = new SnapshotChunk(buf, 1, 0, 1);
-  t.notStrictEquals(chunk, buf);
-  t.strictEquals(chunk.isFirstChunk, true);
-  t.strictEquals(chunk.isLastChunk, true);
+  t.not(chunk, buf);
+  t.equal(chunk.isFirstChunk, true);
+  t.equal(chunk.isLastChunk, true);
 
   chunk = new SnapshotChunk(buf, 1, 2, 4);
-  t.notStrictEquals(chunk, buf);
-  t.strictEquals(chunk.isFirstChunk, false);
-  t.strictEquals(chunk.isLastChunk, false);
+  t.not(chunk, buf);
+  t.equal(chunk.isFirstChunk, false);
+  t.equal(chunk.isLastChunk, false);
 
   t.test('bufferToSnapshotChunk', t => {
     var buf = Buffer.from([0xc0]);
     var chunk = SnapshotChunk.bufferToSnapshotChunk(buf, 1, 0, 3, 1001);
     t.type(chunk, SnapshotChunk);
     t.type(chunk, Buffer);
-    t.strictEquals(chunk, buf);
-    t.strictEquals(chunk.isFirstChunk, true);
-    t.strictEquals(chunk.isLastChunk, false);
-    t.strictEquals(SnapshotChunk.isSnapshotChunk(chunk), true);
-    t.strictEquals(SnapshotChunk.isSnapshotChunk(buf), true);
-    t.strictEquals(chunk.isSnapshotChunk, true);
-    t.strictEquals(buf.isSnapshotChunk, true);
-    t.strictEquals(chunk.logIndex, 1);
-    t.strictEquals(chunk.snapshotByteOffset, 0);
-    t.strictEquals(chunk.snapshotTotalLength, 3);
-    t.strictEquals(chunk.logTerm, 1001);
-    t.strictEquals(buf.logIndex, 1);
-    t.strictEquals(buf.snapshotByteOffset, 0);
-    t.strictEquals(buf.snapshotTotalLength, 3);
-    t.strictEquals(buf.logTerm, 1001);
+    t.equal(chunk, buf);
+    t.equal(chunk.isFirstChunk, true);
+    t.equal(chunk.isLastChunk, false);
+    t.equal(SnapshotChunk.isSnapshotChunk(chunk), true);
+    t.equal(SnapshotChunk.isSnapshotChunk(buf), true);
+    t.equal(chunk.isSnapshotChunk, true);
+    t.equal(buf.isSnapshotChunk, true);
+    t.equal(chunk.logIndex, 1);
+    t.equal(chunk.snapshotByteOffset, 0);
+    t.equal(chunk.snapshotTotalLength, 3);
+    t.equal(chunk.logTerm, 1001);
+    t.equal(buf.logIndex, 1);
+    t.equal(buf.snapshotByteOffset, 0);
+    t.equal(buf.snapshotTotalLength, 3);
+    t.equal(buf.logTerm, 1001);
     t.end();
   });
 

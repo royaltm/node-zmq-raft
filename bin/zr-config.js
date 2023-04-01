@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/* 
+/*
  *  Copyright (c) 2016-2018 Rafał Michalski <royal@yeondir.com>
  */
 "use strict";
@@ -47,12 +47,14 @@ program
   // .option('-f, --file <file>', 'Replace the cluster with peers from a file in hjson format')
   .parse(process.argv);
 
-if (!program.add && !program.replace && !program.delete) {
-  program.dryRun = true;
+const opts = program.opts()
+
+if (!opts.add && !opts.replace && !opts.delete) {
+  opts.dryRun = true;
 }
 
-if (program.replace) {
-  if (program.add || program.delete) {
+if (opts.replace) {
+  if (opts.add || opts.delete) {
     exitError(1, 'specify --replace is mutually exclusive with --add and --delete');
   }
 }
@@ -63,37 +65,37 @@ function exitError(status) {
   process.exit(status);
 }
 
-readConfig(program.config, program.ns).then(config => {
+readConfig(opts.config, opts.ns).then(config => {
   const urls = program.args;
   return Promise.resolve(urls.length === 0 ? Array.from(parsePeers(config.peers).values())
                                            : lookup(urls))
   .then(urls => {
     if (urls.length === 0) program.help();
-    const secret = program.cluster === undefined ? config.secret
-                                                 : program.cluster;
+    const secret = opts.cluster === undefined ? config.secret
+                                                 : opts.cluster;
     return {urls, secret}
   });
 })
 .then(({urls, secret}) => new ZmqRaftClient(urls, {secret}))
 .then(client => {
-  return client.requestConfig(program.timeout)
+  return client.requestConfig(opts.timeout)
   .then(config => {
     var newcfg
       , oldcfg = parsePeers(objectToAry(config.urls));
 
-    if (program.replace) {
-      newcfg = parsePeerUrls(program.replace, oldcfg);
+    if (opts.replace) {
+      newcfg = parsePeerUrls(opts.replace, oldcfg);
     }
     else {
       newcfg = new Map(oldcfg);
-      if (program.add) {
-        parsePeerUrls(program.add, oldcfg).forEach((url, id) => {
+      if (opts.add) {
+        parsePeerUrls(opts.add, oldcfg).forEach((url, id) => {
           if (oldcfg.has(id)) exitError(2, 'trying to add peer already found in the cluster: ' + id);
           newcfg.set(id, url);
         });
       }
-      if (program.delete) {
-        parsePeerUrls(program.delete, oldcfg).forEach((url, id) => {
+      if (opts.delete) {
+        parsePeerUrls(opts.delete, oldcfg).forEach((url, id) => {
           if (!oldcfg.has(id)) exitError(3, 'trying to remove peer not found in the cluster: ' + id);
           newcfg.delete(id);
         });
@@ -106,7 +108,7 @@ readConfig(program.config, program.ns).then(config => {
 
       showConfig(newcfg, null, 'Requesting configuration change with ' + ident, oldcfg);
 
-      if (!program.dryRun) {
+      if (!opts.dryRun) {
         return client.configUpdate(ident, peers)
         .then(index => {
           console.log("Cluster joined configuration changed at index %s.", index);
@@ -152,7 +154,7 @@ function configIsSame(oldcfg, newcfg) {
 }
 
 function getIdent() {
-  var id = program.ident || genIdent();
+  var id = opts.ident || genIdent();
   if (!isIdent(id)) {
     exitError(3, "invalid ident format");
   }

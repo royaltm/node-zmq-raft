@@ -1,4 +1,4 @@
-/* 
+/*
  *  Copyright (c) 2016-2017 Rafał Michalski <royal@yeondir.com>
  *  License: LGPL
  */
@@ -29,11 +29,11 @@ test('ZmqProtocolSocket', suite => {
             let [src, id, msg] = frames;
             t.type(src, Buffer);
             t.type(id, Buffer);
-            t.strictEquals(id.length, 1);
+            t.equal(id.length, 1);
             t.type(msg, Buffer);
-            t.notStrictEquals(src.length, 0);
-            t.notStrictEquals(id.length, 0);
-            t.strictEquals(msg.toString(), "foo");
+            t.not(src.length, 0);
+            t.not(id.length, 0);
+            t.equal(msg.toString(), "foo");
             router.send([src, id, "foo", "bar"]);
             resolve();
           } catch(e) { reject(e); }
@@ -41,11 +41,11 @@ test('ZmqProtocolSocket', suite => {
       }),
       socket.request("foo").then(res => {
         t.type(res, Array);
-        t.strictEquals(res.length, 2);
+        t.equal(res.length, 2);
         t.type(res[0], Buffer);
         t.type(res[1], Buffer);
-        t.strictEquals(res[0].toString(), "foo");
-        t.strictEquals(res[1].toString(), "bar");
+        t.equal(res[0].toString(), "foo");
+        t.equal(res[1].toString(), "bar");
         router.unbindSync(url);
       })
       .then(() => {
@@ -62,7 +62,7 @@ test('ZmqProtocolSocket', suite => {
     var start = Date.now();
     socket.request("foo").catch(err => {
       t.type(err, ZmqProtocolSocket.TimeoutError);
-      t.strictEquals(err.isTimeout, true);
+      t.equal(err.isTimeout, true);
       t.ok(Date.now() - start >= 100);
     })
     .then(() => {
@@ -85,11 +85,11 @@ test('ZmqProtocolSocket', suite => {
             let [src, id, msg] = frames;
             t.type(src, Buffer);
             t.type(id, Buffer);
-            t.strictEquals(id.length, 1);
+            t.equal(id.length, 1);
             t.type(msg, Buffer);
-            t.notStrictEquals(src.length, 0);
-            t.notStrictEquals(id.length, 0);
-            t.strictEquals(msg.toString(), "foo");
+            t.not(src.length, 0);
+            t.not(id.length, 0);
+            t.equal(msg.toString(), "foo");
             setTimeout(() => router.send([src, id, "foo", "bar"]), 50);
             setTimeout(() => router.send([src, id, "baz"]), 100);
             setTimeout(() => router.send([src, id]), 300);
@@ -107,25 +107,25 @@ test('ZmqProtocolSocket', suite => {
             t.ok(Date.now() - start >= 50);
             t.type(res[0], Buffer);
             t.type(res[1], Buffer);
-            t.strictEquals(res[0].toString(), "foo");
-            t.strictEquals(res[1].toString(), "bar");            
+            t.equal(res[0].toString(), "foo");
+            t.equal(res[1].toString(), "bar");
             refresh();
           }
           else if (res.length === 1) {
             t.ok(Date.now() - start >= 100);
             t.type(res[0], Buffer);
-            t.strictEquals(res[0].toString(), "baz");
+            t.equal(res[0].toString(), "baz");
             refresh(250);
           }
           else if (res.length === 0) {
             t.ok(Date.now() - start >= 300);
-            t.strictEquals(res.length, 0);
+            t.equal(res.length, 0);
             throw new Error("i am so bad");
           }
         }
       }).catch(err => {
         t.type(err, Error);
-        t.strictEquals(err.message, "i am so bad");
+        t.equal(err.message, "i am so bad");
       })
     ])
     .then(() => {
@@ -152,15 +152,15 @@ test('ZmqProtocolSocket', suite => {
           try {
             t.type(reply, 'function');
             t.type(reply.requestId, Buffer);
-            t.strictEquals(reply.requestId.toString('hex'), requestIdStr);
+            t.equal(reply.requestId.toString('hex'), requestIdStr);
             t.type(args, Array);
-            t.strictEquals(args.length, 5);
-            t.strictEquals(args[0], "foo");
-            t.strictEquals(args[1], -776);
+            t.equal(args.length, 5);
+            t.equal(args[0], "foo");
+            t.equal(args[1], -776);
             t.type(args[2], 'boolean');
-            t.strictEquals(args[3], 1234567890);
+            t.equal(args[3], 1234567890);
             t.type(args[4], Buffer);
-            t.deepEquals(args[4], Buffer.from('bar'));
+            t.same(args[4], Buffer.from('bar'));
             if (args[2] === true) {
               reply([Buffer.from('goo'), {cat: "meow", "ary": [1,2,3]},'deadbaca', Buffer.from('lost')]);
             }
@@ -179,9 +179,9 @@ test('ZmqProtocolSocket', suite => {
             t.type(res, Array);
             t.type(res.length, 3);
             t.type(res[0], Buffer);
-            t.strictEquals(res[0].length, 3);
-            t.deepEquals(res[1], {cat: "meow", "ary": [1,2,3]});
-            t.strictEquals(res[2], 'deadbaca');
+            t.equal(res[0].length, 3);
+            t.same(res[1], {cat: "meow", "ary": [1,2,3]});
+            t.equal(res[2], 'deadbaca');
             if (res[0].toString() === 'goo') {
               reply([Buffer.from("foo"),-776,false,1234567890,Buffer.from('bar')]);
             }
@@ -194,10 +194,10 @@ test('ZmqProtocolSocket', suite => {
         return Promise.all([
           socket.request("moo").catch(err => {
             t.type(err, Error);
-            t.strictEquals(err.message, "encode frames error: not enough arguments");
+            t.equal(err.message, "encode frames error: not enough arguments");
           }),
           promise.then(res => {
-            t.strictEquals(res, 'OK');
+            t.equal(res, 'OK');
           })
         ]);
       })
@@ -216,9 +216,9 @@ test('ZmqProtocolSocket', suite => {
     var [router, url] = createZmqSocket('router');
     router.unbindSync(url);
     var socket = new ZmqProtocolSocket(url, {highwatermark: 1});
-    t.strictEquals(socket.getsockopt('ZMQ_SNDHWM'), 1);
-    t.strictEquals(socket.pendingRequests, 0);
-    t.strictEquals(socket.pendingQueues, 0);
+    t.equal(socket.getsockopt('ZMQ_SNDHWM'), 1);
+    t.equal(socket.pendingRequests, 0);
+    t.equal(socket.pendingQueues, 0);
     var promise = Promise.all([
       new Promise((resolve, reject) => {
         var count = 8;
@@ -227,11 +227,11 @@ test('ZmqProtocolSocket', suite => {
             let [src, id, msg] = frames;
             t.type(src, Buffer);
             t.type(id, Buffer);
-            t.strictEquals(id.length, 1);
+            t.equal(id.length, 1);
             t.type(msg, Buffer);
-            t.notStrictEquals(src.length, 0);
-            t.notStrictEquals(id.length, 0);
-            t.matches(msg.toString(), /^(foo|bar|baz|trigger|reply[1-4])$/);
+            t.not(src.length, 0);
+            t.not(id.length, 0);
+            t.match(msg.toString(), /^(foo|bar|baz|trigger|reply[1-4])$/);
             if (msg.toString() === 'baz') {
               router.send([src, id, 'more']);
             }
@@ -244,23 +244,23 @@ test('ZmqProtocolSocket', suite => {
       }),
       socket.request("foo").then(res => {
         t.type(res, Array);
-        t.strictEquals(res.length, 3);
+        t.equal(res.length, 3);
         t.type(res[0], Buffer);
         t.type(res[1], Buffer);
         t.type(res[2], Buffer);
-        t.strictEquals(res[0].toString(), "foo");
-        t.strictEquals(res[1].toString(), "bar");
-        t.strictEquals(res[2].toString(), "baz");
+        t.equal(res[0].toString(), "foo");
+        t.equal(res[1].toString(), "bar");
+        t.equal(res[2].toString(), "baz");
       }),
       socket.request("bar").then(res => {
         t.type(res, Array);
-        t.strictEquals(res.length, 3);
+        t.equal(res.length, 3);
         t.type(res[0], Buffer);
         t.type(res[1], Buffer);
         t.type(res[2], Buffer);
-        t.strictEquals(res[0].toString(), "foo");
-        t.strictEquals(res[1].toString(), "bar");
-        t.strictEquals(res[2].toString(), "baz");
+        t.equal(res[0].toString(), "foo");
+        t.equal(res[1].toString(), "bar");
+        t.equal(res[2].toString(), "baz");
       }),
       socket.request("baz", {onresponse: (res, reply, refresh) => {
         if (res[0].toString() === 'more') {
@@ -277,39 +277,39 @@ test('ZmqProtocolSocket', suite => {
         }
       }}).then(res => {
         t.type(res, Array);
-        t.strictEquals(res.length, 3);
+        t.equal(res.length, 3);
         t.type(res[0], Buffer);
         t.type(res[1], Buffer);
         t.type(res[2], Buffer);
-        t.strictEquals(res[0].toString(), "foo");
-        t.strictEquals(res[1].toString(), "bar");
-        t.strictEquals(res[2].toString(), "baz");
-        t.strictEquals(socket.pendingRequests, 0);
-        t.strictEquals(socket.pendingQueues, 1);
+        t.equal(res[0].toString(), "foo");
+        t.equal(res[1].toString(), "bar");
+        t.equal(res[2].toString(), "baz");
+        t.equal(socket.pendingRequests, 0);
+        t.equal(socket.pendingQueues, 1);
         return socket.waitForQueues(1000).then(() => {
-          t.strictEquals(socket.pendingQueues, 0);
+          t.equal(socket.pendingQueues, 0);
         })
       }),
       socket.waitForQueues(1000).then(() => {
-        t.notStrictEquals(socket.pendingRequests, 0);
-        t.strictEquals(socket.pendingQueues, 0);
+        t.not(socket.pendingRequests, 0);
+        t.equal(socket.pendingQueues, 0);
       }),
       socket.waitForQueues(1).catch(err => {
         t.type(err, ZmqProtocolSocket.TimeoutError);
-        t.strictEquals(err.isTimeout, true);
+        t.equal(err.isTimeout, true);
         router.bindSync(url);
       })
     ])
     .then(() => {
-      t.strictEquals(socket.pendingRequests, 0);
-      t.strictEquals(socket.pendingQueues, 0);
+      t.equal(socket.pendingRequests, 0);
+      t.equal(socket.pendingQueues, 0);
       router.close();
       socket.destroy();
       t.ok(true);
     })
 
-    t.strictEquals(socket.pendingRequests, 3);
-    t.strictEquals(socket.pendingQueues, 2);
+    t.equal(socket.pendingRequests, 3);
+    t.equal(socket.pendingQueues, 2);
     return promise.catch(t.threw);
   });
 

@@ -1,4 +1,4 @@
-/* 
+/*
  *  Copyright (c) 2017-2018 Rafał Michalski <royal@yeondir.com>
  *  License: LGPL
  */
@@ -15,11 +15,11 @@ test('should give defaults when no config file is provided', t => {
   t.plan(4);
   return readConfig('')
   .then(config => {
-    t.deepEquals(config, createOptions());
+    t.same(config, createOptions());
     return readConfig('', 'raft')
   })
   .then(config => {
-    t.deepEquals(config, createOptions());
+    t.same(config, createOptions());
     return readConfig('foo.xyz');
   })
   .catch(err => {
@@ -36,15 +36,15 @@ test('should merge js config file', t => {
   t.plan(3);
   return readConfig(configBase + '.js')
   .then(config => {
-    t.deepEquals(config, createOptions({id: 'example-js', secret: 'foo-js'}));
+    t.same(config, createOptions({id: 'example-js', secret: 'foo-js'}));
     return readConfig(configBase + '.js', 'other.cfg');
   })
   .then(config => {
-    t.deepEquals(config, createOptions({id: 'other-js', secret: 'bar-js'}));
+    t.same(config, createOptions({id: 'other-js', secret: 'bar-js'}));
     return readConfig(configBase + '.js', '');
   })
   .then(config => {
-    t.deepEquals(config, createOptions({id: 'root-js', secret: 'baz-js',
+    t.same(config, createOptions({id: 'root-js', secret: 'baz-js',
       raft: { id: 'example-js', secret: 'foo-js' },
       other: { cfg: { id: 'other-js', secret: 'bar-js' } }
     }));
@@ -56,15 +56,15 @@ test('should merge json config file', t => {
   t.plan(3);
   return readConfig(configBase + '.json')
   .then(config => {
-    t.deepEquals(config, createOptions({id: 'example-json', secret: 'foo-json'}));
+    t.same(config, createOptions({id: 'example-json', secret: 'foo-json'}));
     return readConfig(configBase + '.json', 'other.cfg');
   })
   .then(config => {
-    t.deepEquals(config, createOptions({id: 'other-json', secret: 'bar-json'}));
+    t.same(config, createOptions({id: 'other-json', secret: 'bar-json'}));
     return readConfig(configBase + '.json', '');
   })
   .then(config => {
-    t.deepEquals(config, createOptions({id: 'root-json', secret: 'baz-json',
+    t.same(config, createOptions({id: 'root-json', secret: 'baz-json',
       raft: { id: 'example-json', secret: 'foo-json' },
       other: { cfg: { id: 'other-json', secret: 'bar-json' } }
     }));
@@ -76,15 +76,15 @@ test('should merge hjson config file', t => {
   t.plan(3);
   return readConfig(configBase + '.hjson')
   .then(config => {
-    t.deepEquals(config, createOptions({id: 'example-hjson', secret: 'foo-hjson'}));
+    t.same(config, createOptions({id: 'example-hjson', secret: 'foo-hjson'}));
     return readConfig(configBase + '.hjson', 'other.cfg');
   })
   .then(config => {
-    t.deepEquals(config, createOptions({id: 'other-hjson', secret: 'bar-hjson'}));
+    t.same(config, createOptions({id: 'other-hjson', secret: 'bar-hjson'}));
     return readConfig(configBase + '.hjson', '');
   })
   .then(config => {
-    t.deepEquals(config, createOptions({id: 'root-hjson', secret: 'baz-hjson',
+    t.same(config, createOptions({id: 'root-hjson', secret: 'baz-hjson',
       raft: { id: 'example-hjson', secret: 'foo-hjson' },
       other: { cfg: { id: 'other-hjson', secret: 'bar-hjson' } }
     }));
@@ -96,15 +96,15 @@ test('should merge yaml config file', t => {
   t.plan(3);
   return readConfig(configBase + '.yaml')
   .then(config => {
-    t.deepEquals(config, createOptions({id: 'example-yaml', secret: 'foo-yaml'}));
+    t.same(config, createOptions({id: 'example-yaml', secret: 'foo-yaml'}));
     return readConfig(configBase + '.yaml', 'other.cfg');
   })
   .then(config => {
-    t.deepEquals(config, createOptions({id: 'other-yaml', secret: 'bar-yaml'}));
+    t.same(config, createOptions({id: 'other-yaml', secret: 'bar-yaml'}));
     return readConfig(configBase + '.yaml', '');
   })
   .then(config => {
-    t.deepEquals(config, createOptions({id: 'root-yaml', secret: 'baz-yaml',
+    t.same(config, createOptions({id: 'root-yaml', secret: 'baz-yaml',
       raft: { id: 'example-yaml', secret: 'foo-yaml' },
       other: { cfg: { id: 'other-yaml', secret: 'bar-yaml' } }
     }));
@@ -116,15 +116,15 @@ test('should merge toml config file', t => {
   t.plan(3);
   return readConfig(configBase + '.toml')
   .then(config => {
-    t.deepEquals(config, createOptions({id: 'example-toml', secret: 'foo-toml'}));
+    t.same(config, createOptions({id: 'example-toml', secret: 'foo-toml'}));
     return readConfig(configBase + '.toml', 'other.cfg');
   })
   .then(config => {
-    t.deepEquals(config, createOptions({id: 'other-toml', secret: 'bar-toml'}));
+    t.same(config, createOptions({id: 'other-toml', secret: 'bar-toml'}));
     return readConfig(configBase + '.toml', '');
   })
   .then(config => {
-    t.deepEquals(config, createOptions({id: 'root-toml', secret: 'baz-toml',
+    t.same(config, createOptions({id: 'root-toml', secret: 'baz-toml',
       raft: { id: 'example-toml', secret: 'foo-toml' },
       other: { cfg: { id: 'other-toml', secret: 'bar-toml' } }
     }));

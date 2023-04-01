@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/* 
+/*
  *  Copyright (c) 2016-2018 Rafał Michalski <royal@yeondir.com>
  */
 "use strict";
@@ -47,14 +47,16 @@ program
   .option('--ns [namespace]', 'Raft config root namespace [raft]', 'raft')
   .parse(process.argv);
 
+const opts = program.opts()
+
 function exitError(status) {
   var args = [].slice.call(arguments, 1);
   console.error.apply(console, args);
   process.exit(status);
 }
 
-readConfig(program.config, program.ns).then(config => {
-  const rootDir = program.dir || config.data.path;
+readConfig(opts.config, opts.ns).then(config => {
+  const rootDir = opts.dir || config.data.path;
 
   if ('string' !== typeof rootDir) {
     exitError(8, 'data directory must be defined!');
@@ -62,18 +64,18 @@ readConfig(program.config, program.ns).then(config => {
 
   debug('data directory: %s', rootDir);
 
-  const configDir = program.config ? path.dirname(path.resolve(program.config))
+  const configDir = opts.config ? path.dirname(path.resolve(opts.config))
                                    : rootDir;
 
-  const logDir = path.resolve(rootDir, program.log || config.data.log || 'log');
-  const snapFile = path.resolve(rootDir, program.snapshot || config.data.snapshot || 'snap');
+  const logDir = path.resolve(rootDir, opts.log || config.data.log || 'log');
+  const snapFile = path.resolve(rootDir, opts.snapshot || config.data.snapshot || 'snap');
 
-  const targetFile = program.target ||
+  const targetFile = opts.target ||
                      (config.data.compact.install && path.resolve(rootDir, config.data.compact.install));
-  const stateMachinePath = program.stateMachine ||
+  const stateMachinePath = opts.stateMachine ||
                            (config.data.compact.state.path && path.resolve(configDir, config.data.compact.state.path));
 
-  const secret = program.cluster === undefined ? config.secret : program.cluster;
+  const secret = opts.cluster === undefined ? config.secret : opts.cluster;
 
   if (!targetFile) {
     exitError(2, "no target file");
@@ -86,11 +88,11 @@ readConfig(program.config, program.ns).then(config => {
   }
 
   var lastIndexPromise;
-  if (isFinite(program.index) && program.index >= 0) {
-    lastIndexPromise = Promise.resolve(program.index);
+  if (isFinite(opts.index) && opts.index >= 0) {
+    lastIndexPromise = Promise.resolve(opts.index);
   }
   else {
-    const peerUrl = program.peer || findPeerUrl(config);
+    const peerUrl = opts.peer || findPeerUrl(config);
     if (!peerUrl) {
       exitError(4, "specify last index or peer url");
     }
@@ -152,7 +154,7 @@ readConfig(program.config, program.ns).then(config => {
     .then(() => cleanupTempFiles(targetFile, debug))
     .then(() => tempSnapshot.close())
     .then(() => {
-      if (program.prune) return listPruneFiles(fileLog, lastIndex);
+      if (opts.prune) return listPruneFiles(fileLog, lastIndex);
     })
     .then(() => fileLog.close());
   })
@@ -168,8 +170,8 @@ function mergeSmOptions(options) {
   var smOptions = Object.assign({compressionLevel: Z_BEST_COMPRESSION}, options);
 
   /* force zip */
-  if (program.zip !== undefined) {
-    smOptions.compressionLevel = program.zip;
+  if (opts.zip !== undefined) {
+    smOptions.compressionLevel = opts.zip;
   }
 
   if ('number' !== typeof smOptions.compressionLevel
@@ -179,7 +181,7 @@ function mergeSmOptions(options) {
     exitError(7, "zip level must be an integer from 0 to " + Z_BEST_COMPRESSION);
   }
 
-  if (program.unzip === false) {
+  if (opts.unzip === false) {
     /* force no-unzip */
     smOptions.unzipSnapshot = false;
   }

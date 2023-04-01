@@ -1,4 +1,4 @@
-/* 
+/*
  *  Copyright (c) 2016 Rafał Michalski <royal@yeondir.com>
  *  License: LGPL
  */
@@ -15,9 +15,9 @@ const tempfile = path.join(__dirname, '../../tmp/test.lock.file.' + process.pid)
 
 test('should be a function', t => {
   t.type(shared, 'function');
-  t.strictEquals(shared.length, 2);
+  t.equal(shared.length, 2);
   t.type(exclusive, 'function');
-  t.strictEquals(exclusive.length, 2);
+  t.equal(exclusive.length, 2);
   t.end();
 });
 
@@ -28,51 +28,51 @@ test('exclusive', t => {
   var start = Date.now();
   return Promise.all([
     exclusive(scope, () => delay(100).then(() => {
-      t.strictEquals(scope.tap, undefined);
+      t.equal(scope.tap, undefined);
       return scope.tap = 1;
     })).then(x => {
-      t.strictEquals(x, 1);
+      t.equal(x, 1);
     }),
 
     exclusive(scope, () => Promise.reject("baaa"))
     .catch(msg => {
-      t.strictEquals(msg, "baaa");
+      t.equal(msg, "baaa");
     }),
 
     exclusive(scope, () => new Promise((resolve, reject) => setImmediate(() => {
-      t.strictEquals(scope.tap, 1);
+      t.equal(scope.tap, 1);
       scope.tap = 2;
       resolve(2);
     }))).then(x => {
-      t.strictEquals(x, 2);
+      t.equal(x, 2);
     }),
 
     exclusive(scope, () => delay(10).then(() => {
-      t.strictEquals(scope.tap, 2);
+      t.equal(scope.tap, 2);
       return scope.tap = 3;
     })).then(x => {
-      t.strictEquals(x, 3);
+      t.equal(x, 3);
     }),
 
     exclusive(scope, () => {
-      t.strictEquals(scope.tap, 3);
+      t.equal(scope.tap, 3);
       return scope.tap = 4;
     }).then(x => {
-      t.strictEquals(x, 4);
+      t.equal(x, 4);
     }),
 
     exclusive(scope, () => {
-      t.strictEquals(scope.tap, 4);
+      t.equal(scope.tap, 4);
       throw new Error("foo");
     }).catch(err => {
       t.type(err, Error);
-      t.strictEquals(err.message, "foo");
+      t.equal(err.message, "foo");
     }),
 
   ])
   .then(() => {
     var delta = Date.now() - start;
-    t.strictEquals(scope.tap, 4);
+    t.equal(scope.tap, 4);
     t.ok(delta > 110, 'not ok, was: ' + delta);
   })
   .catch(t.threw);
@@ -85,64 +85,64 @@ test('shared', t => {
   var start = Date.now();
   return Promise.all([
     shared(scope, () => {
-      t.strictEquals(scope.tap, undefined);
+      t.equal(scope.tap, undefined);
       return delay(20).then(() => {
-        t.strictEquals(scope.tap, 1);
+        t.equal(scope.tap, 1);
         return scope.tap = 2;
       });
     }).then(x => {
-      t.strictEquals(x, 2);
+      t.equal(x, 2);
     }),
 
     shared(scope, () => {
       return delay(10).then(() => {
-        t.strictEquals(scope.tap, undefined);
+        t.equal(scope.tap, undefined);
         return scope.tap = 1;
       });
     }).then(x => {
-      t.strictEquals(x, 1);
+      t.equal(x, 1);
     }),
 
     exclusive(scope, () => {
-      t.strictEquals(scope.tap, 2);
+      t.equal(scope.tap, 2);
       return delay(50).then(() => {
-        t.strictEquals(scope.tap, 2);
+        t.equal(scope.tap, 2);
         return scope.tap = 3;
       })
     }).then(x => {
-      t.strictEquals(x, 3);
+      t.equal(x, 3);
     }),
 
     shared(scope, () => {
-      t.strictEquals(scope.tap, 3);
+      t.equal(scope.tap, 3);
       return delay(20).then(() => {
-        t.strictEquals(scope.tap, 4);
+        t.equal(scope.tap, 4);
         return scope.tap = 5;
       });
     }).then(x => {
-      t.strictEquals(x, 5);
+      t.equal(x, 5);
     }),
 
     shared(scope, () => delay(10).then(() => {
-      t.strictEquals(scope.tap, 3);
+      t.equal(scope.tap, 3);
       return scope.tap = 4;
     })).then(x => {
-      t.strictEquals(x, 4);
+      t.equal(x, 4);
     }),
 
     exclusive(scope, () => {
-      t.strictEquals(scope.tap, 5);
+      t.equal(scope.tap, 5);
       return delay(10).then(() => {
-        t.strictEquals(scope.tap, 5);
+        t.equal(scope.tap, 5);
         return scope.tap = 6;
       })
     }).then(x => {
-      t.strictEquals(x, 6);
+      t.equal(x, 6);
     }),
   ])
   .then(() => {
     var delta = Date.now() - start;
-    t.strictEquals(scope.tap, 6);
+    t.equal(scope.tap, 6);
     t.ok(delta > 100, 'not ok, was: ' + delta);
   })
   .catch(t.threw);
@@ -159,14 +159,14 @@ test('torture', t => {
     return write(fd, buffer, 0, buffer.length, 0);
   }))
   .then(bytes => {
-    t.strictEquals(bytes, buffer.length);
+    t.equal(bytes, buffer.length);
   }));
   for(let i = 10; i-- > 0;) promises.push(shared(scope, () => {
     var buf = Buffer.allocUnsafe(buffer.length);
     return read(scope.fd, buf, 0, buf.length, 0)
     .then(bytes => {
-      t.strictEquals(bytes, buffer.length);
-      t.deepEqual(buf, buffer);
+      t.equal(bytes, buffer.length);
+      t.same(buf, buffer);
     });
   }));
   promises.push(exclusive(scope, () => {
@@ -174,7 +174,7 @@ test('torture', t => {
       open(tempfile, 'w+').then(fd => {
         return write(fd, buffer2, 0, buffer2.length, 0).then(bytes => {
           scope.fd = fd;
-          t.strictEquals(bytes, buffer2.length);
+          t.equal(bytes, buffer2.length);
         });
       }),
       close(scope.fd)
@@ -184,8 +184,8 @@ test('torture', t => {
     var buf = Buffer.allocUnsafe(buffer2.length);
     return read(scope.fd, buf, 0, buf.length, 0)
     .then(bytes => {
-      t.strictEquals(bytes, buffer2.length);
-      t.deepEqual(buf, buffer2);
+      t.equal(bytes, buffer2.length);
+      t.same(buf, buffer2);
     });
   }));
   promises.push(exclusive(scope, () => {
@@ -194,7 +194,7 @@ test('torture', t => {
     })
   }));
   promises.push(exclusive(scope, () => {
-    t.strictEquals(scope.fd, -1);
+    t.equal(scope.fd, -1);
     return unlink(tempfile);
   }));
   return Promise.all(promises)
@@ -221,8 +221,8 @@ test('random', t => {
         var buf = Buffer.allocUnsafe(buffer.length);
         return read(scope.fd, buf, 0, buf.length, 0)
         .then(bytes => {
-          t.strictEquals(bytes, buffer.length);
-          t.deepEqual(buf, buffer);
+          t.equal(bytes, buffer.length);
+          t.same(buf, buffer);
           status.read++;
         });
       }
@@ -234,7 +234,7 @@ test('random', t => {
     return write(fd, buffer, 0, buffer.length, 0);
   }))
   .then(bytes => {
-    t.strictEquals(bytes, buffer.length);
+    t.equal(bytes, buffer.length);
   }));
 
   promises.push(delay(50).then(() => exclusive(scope, () => {
@@ -246,7 +246,7 @@ test('random', t => {
 
   return Promise.all(promises)
   .then(() => {
-    t.strictEquals(scope.fd, null);
+    t.equal(scope.fd, null);
     t.ok(status.read > 30, "not ok, was: " + status.read);
     t.ok(status.unread > 30, "not ok, was: " + status.unread);
   })
