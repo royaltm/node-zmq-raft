@@ -505,9 +505,12 @@ const raftPeer = raft.server.builder.build({
 })
 // ...
 const seedPeers = ["tcp://raft-host-1.local:8047", "tcp://raft-host-2.local:8047", "tcp://raft-host-3.local:8047"];
-// seed peers are only here for initial discovery, ZmqRaftClient retrieves the actual peer list from any RAFT server it connects to initially
-const client = new raft.client.ZmqRaftClient(seedPeers, {secret: mySecret, lazy: true, heartbeat: 5000});
-// keep the client instance through the lifetime of your application, so it can keep track of the cluster membership changes
+// seed peers are only here for initial discovery, ZmqRaftClient retrieves the actual peer list
+// from any RAFT server it connects to initially
+const client = new raft.client.ZmqRaftClient(seedPeers, {
+                                  secret: mySecret, lazy: true, heartbeat: 5000});
+// keep the client instance through the lifetime of your application,
+// so it can keep track of the cluster membership changes
 
 async function requestUpdate(txData) {
   const serializedTxData = Buffer.from(JSON.stringify(txData));
@@ -544,13 +547,16 @@ Scenario [2](#use-cases):
 
 ```js
 const seedPeers = ["tcp://raft-host-1.local:8047", "tcp://raft-host-2.local:8047", "tcp://raft-host-3.local:8047"];
-const sub = new raft.client.ZmqRaftSubscriber(seedPeers, {secret: mySecret, lastIndex: localLastIndex||0});
+const sub = new raft.client.ZmqRaftSubscriber(seedPeers, {
+                              secret: mySecret, lastIndex: localLastIndex||0});
 // keep the sub instance through the lifetime of your application
+
+const bufferToUpdateRequest = raft.common.LogEntry.UpdateRequest.bufferToUpdateRequest;
 
 function requestUpdate(txData) {
   const serializedTxData = Buffer.from(JSON.stringify(txData));
   const requestId = raft.utils.id.genIdent();
-  const updateRequest = raft.common.LogEntry.UpdateRequest.bufferToUpdateRequest(serializedTxData, requestId);
+  const updateRequest = bufferToUpdateRequest(serializedTxData, requestId);
   notifyIsFresh(false);
   return sub.write(updateRequest);
 } 
