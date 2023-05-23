@@ -361,3 +361,86 @@ DEBUG=* bin/zr-config.js -c config/example.hjson -d tcp://127.0.0.1:8347/4
 ```
 
 After the peer has been successfully removed, if it wasn't a leader during the configuration update it will most probably become a CANDIDATE. It happens when the removed peer isn't updated with the final `Cnew` configuration. This is ok, because cluster members will ignore voting requests from non-member peers. For more information on membership changes read [here](RAFT.md).
+
+
+### Interpreting log entries
+
+The log entry format is described [here](PROTO.md). There are several API methods that provide entries as raw data Buffers. In those instances [`raft.common.LogEntry`](lib/common/log_entry.js) API can be used to interpret each entry.
+
+Please note that not all log entries contains state data. Log entries are also created for cluster configuration changes and checkpointing (see [RAFT](RAFT.md)).
+
+Here is an example on how to interpret log entries when extending `raft.api.StateMachineBase`:
+
+```js
+class MyStateMachine extends raft.api.StateMachineBase {
+//...
+    applyEntries(logEntries, nextIndex, currentTerm, snapshot) {
+      for (let [index, item] of logEntries.entries()) {
+          let entry = raft.common.LogEntry.bufferToLogEntry(item, nextIndex + index);
+          console.log("state entry: log-index=%s term=%s", entry.logIndex, entry.readEntryTerm());
+          if (entry.isStateEntry) {
+            console.log("this is state entry:");
+            //  user data of the log entry
+            let data = entry.readEntryData();
+            // ... do something with entry data
+          } else if (entry.isConfigEntry) {
+            console.log("this is config entry");
+          } else {
+            console.log("this is checkpoint entry");
+          }
+      }
+      return super.applyEntries(logEntries, nextIndex, currentTerm, snapshot);
+    }
+}
+```
+
+An example of the "pulse" event listener of the `raft.client.ZmqRaftPeerSub` client:
+
+```js
+let sub = new raft.client.ZmqRaftPeerSub(/* ... */);
+sub.on('pulse', (lastIndex, currentTerm, logEntries) => {
+  let nextIndex = lastIndex - entries.length + 1;
+  for (let [index, item] of logEntries.entries()) {
+      let entry = raft.common.LogEntry.bufferToLogEntry(item, nextIndex + index);
+      // ... do something with entry
+  }
+});
+```
+
+The `receiver` callback argument to `requestEntries` method of [`ZmqRaftClient`](lib/client/zmq_raft_client.js#L383) and [`ZmqRaftPeerClient`](lib/client/zmq_raft_peer_client.js#L465) also receives log entries as an array of raw Buffer chunks, that can be interpreted the same way.
+
+The following:
+
+* [`ZmqRaftSubscriber`](lib/client/zmq_raft_subscriber.js),
+* [`RequestEntriesStream`](lib/client/zmq_raft_peer_client.js#L597) returned from [`requestEntriesStream`](lib/client/zmq_raft_client.js#L557),
+* [`ForeverEntriesStream`](lib/client/zmq_raft_peer_sub.js#L404) returned from [`foreverEntriesStream`](lib/client/zmq_raft_peer_sub.js#L336)
+
+are all object streams that yield instances of either [`common.LogEntry`](lib/common/log_entry.js) or [`common.SnapshotChunk`](lib/common/snapshot_chunk.js).
+
+```js
+let snapshot;
+
+stream.on('data', obj => {
+  console.log("received enrtry or chunk with index: %d", obj.logIndex);
+  if (obj.isLogEntry && obj.isStateEntry) {
+    let data = obj.readEntryData();
+    // ... do something with a state log entry
+  }
+  else if (obj.isSnapshotChunk) {
+    // ... do something with a snapshot chunk
+    // obj.snapshotByteOffset - the byte offset of this chunk
+    // obj.snapshotTotalLength - the total snapshot size in bytes
+    // obj.logTerm - the snapshot log term
+    // obj.length - the snapshot chunk length
+    // any other Buffer instance method can be also called on obj
+    if (obj.isFirstChunk) {
+      snapshot = createNewSnapshot(obj.snapshotTotalLength, obj.logIndex, obj.logTerm);
+    }
+    // this is just an exmample, use stream piping instead or implement backpressure with pause/resume
+    snapshot.write(obj, obj.snapshotByteOffset);
+    if (obj.isLastChunk) {
+      snapshot.commit();
+    }
+  }
+});
+```
