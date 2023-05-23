@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2017-2018 Rafał Michalski <royal@yeondir.com>
+ *  Copyright (c) 2017-2023 Rafał Michalski <royal@yeondir.com>
  *  License: LGPL
  */
 "use strict";

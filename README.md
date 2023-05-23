@@ -491,12 +491,12 @@ stream.on('data', obj => {
 
 The state of the cluster can be updated using the [Request Update RPC](PROTO.md#requestupdate-rpc).
 
-Depending on chosen scenario, use either a ['ZmqRaftClient#requestUpdate'](lib/client/zmq_raft_client.js#L409) method or use the [`stream.Writable`](https://nodejs.org/dist/latest-v18.x/docs/api/stream.html#writable-streams) side of the [`raft.client.ZmqRaftSubscriber`](lib/client/zmq_raft_subscriber.js) `Duplex` API.
+Depending on chosen scenario, use either a [`ZmqRaftClient#requestUpdate`](lib/client/zmq_raft_client.js#L409) method or use the [`stream.Writable`](https://nodejs.org/dist/latest-v18.x/docs/api/stream.html#writable-streams) side of the [`raft.client.ZmqRaftSubscriber`](lib/client/zmq_raft_subscriber.js) `Duplex` API.
 
 Scenario [1](#use-cases):
 
 ```js
-const stateMachine = MyStateMachine(/* ... */);
+const stateMachine = new MyStateMachine(/* ... */);
 // ...
 const seedPeers = ["tcp://raft-host-1.local:8047", "tcp://raft-host-2.local:8047", "tcp://raft-host-3.local:8047"];
 // seed peers are only here for initial discovery, ZmqRaftClient retrieves the actual peer list from any RAFT server it connects to initially

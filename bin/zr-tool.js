@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /*
- *  Copyright (c) 2017 Rafał Michalski <royal@yeondir.com>
+ *  Copyright (c) 2017-2023 Rafał Michalski <royal@yeondir.com>
  */
 "use strict";
 
