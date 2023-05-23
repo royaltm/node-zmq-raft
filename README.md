@@ -369,7 +369,7 @@ The log entry format is described [here](PROTO.md). There are several API method
 
 Please note that not all log entries contains state data. Log entries are also created for cluster configuration changes and checkpointing (see [RAFT](RAFT.md)).
 
-Here is an example on how to interpret log entries when extending `raft.api.StateMachineBase`:
+Here is an example on how to interpret log entries when extending [`raft.api.StateMachineBase`](lib/api/state_machine_base.js):
 
 ```js
 class MyStateMachine extends raft.api.StateMachineBase {
@@ -377,7 +377,7 @@ class MyStateMachine extends raft.api.StateMachineBase {
     applyEntries(logEntries, nextIndex, currentTerm, snapshot) {
       for (let [index, item] of logEntries.entries()) {
           let entry = raft.common.LogEntry.bufferToLogEntry(item, nextIndex + index);
-          console.log("state entry: log-index=%s term=%s", entry.logIndex, entry.readEntryTerm());
+          console.log("log entry: log-index=%s term=%s", entry.logIndex, entry.readEntryTerm());
           if (entry.isStateEntry) {
             console.log("this is state entry:");
             //  user data of the log entry
@@ -407,7 +407,7 @@ sub.on('pulse', (lastIndex, currentTerm, logEntries) => {
 });
 ```
 
-The `receiver` callback argument to `requestEntries` method of [`ZmqRaftClient`](lib/client/zmq_raft_client.js#L383) and [`ZmqRaftPeerClient`](lib/client/zmq_raft_peer_client.js#L465) also receives log entries as an array of raw Buffer chunks, that can be interpreted the same way.
+The `receiver` callback argument to `requestEntries` method of [`ZmqRaftClient`](lib/client/zmq_raft_client.js#L465) and [`ZmqRaftPeerClient`](lib/client/zmq_raft_peer_client.js#L383) also receives log entries as an array of raw Buffer chunks, that can be interpreted the same way.
 
 The following:
 
@@ -421,7 +421,7 @@ are all object streams that yield instances of either [`common.LogEntry`](lib/co
 let snapshot;
 
 stream.on('data', obj => {
-  console.log("received enrtry or chunk with index: %d", obj.logIndex);
+  console.log("received entry or chunk with index: %d", obj.logIndex);
   if (obj.isLogEntry && obj.isStateEntry) {
     let data = obj.readEntryData();
     // ... do something with a state log entry
