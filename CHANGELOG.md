@@ -1,3 +1,10 @@
+0.5.0
+
+* ZmqRaftSubscriber property `lastUpdateLogIndex` added to keep track of the latest updates committed.
+* tap bumped to 16.3.4 to fix multiple high security vulnerabilities.
+* exchanged multiple deprecated test functions for their non-deprecated counterparts.
+* fixed cli flag parsing for files in the bin folder.
+
 0.4.1
 
 * ZmqRaftPeerClient: (fix) RequestEntriesStream gets destroyed on request entries RPC error.
