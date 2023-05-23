@@ -576,3 +576,5 @@ sub.on('data', obj => {
   notifyIsFresh(obj.logIndex >= sub.lastUpdateLogIndex);
 });
 ```
+
+Determining whether your local view of the distributed data is fresh or not is especially important if you are dealing with non-idempotent updates (e.g. increasing values, appending strings). This may also help optimising user interface: application may want to postpone displaying changes, unless all local updates are visible in the local state.
