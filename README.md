@@ -373,7 +373,13 @@ Here is an example on how to interpret log entries when extending [`raft.api.Sta
 
 ```js
 class MyStateMachine extends raft.api.StateMachineBase {
-//...
+    constructor() {
+      super();
+      initMyStateMachine().then(() => {
+        this[Symbol.for('setReady')]();
+      });
+    }
+
     applyEntries(logEntries, nextIndex, currentTerm, snapshot) {
       for (let [index, item] of logEntries.entries()) {
           let entry = raft.common.LogEntry.bufferToLogEntry(item, nextIndex + index);
