@@ -577,4 +577,4 @@ sub.on('data', obj => {
 });
 ```
 
-Determining whether your local view of the distributed data is fresh or not is especially important if you are dealing with non-idempotent updates (e.g. increasing values, appending strings). This may also help optimising user interface: application may want to postpone displaying changes, unless all local updates are visible in the local state.
+Determining whether your local view of the distributed data is fresh is especially important when dealing with non-idempotent updates (e.g. increasing values, appending strings). It may also help optimize the user interface: the application may want to postpone displaying changes unless all local updates are committed and visible in the local state machine.
