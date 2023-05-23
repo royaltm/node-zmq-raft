@@ -122,23 +122,33 @@ Assuming:
 const raft = require('zmq-raft');
 ```
 
+Server components:
+
 - [`raft.server.ZmqRaft`](lib/server/raft.js)
 - [`raft.server.FileLog`](lib/server/filelog.js)
 - [`raft.common.SnaphotFile`](lib/common/snapshotfile.js)
 - [`raft.server.RaftPersistence`](lib/server/raft_persistence.js)
 - [`raft.server.BroadcastStateMachine`](lib/server/broadcast_state_machine.js)
 
-- [`raft.common.LogEntry`](lib/common/log_entry.js)
+Public base API for building applications:
+
+- [`raft.api.PersistenceBase`](lib/api/persistence_base.js)
+- [`raft.api.StateMachineBase`](lib/api/state_machine_base.js)
+
+Client components:
 
 - [`raft.client.ZmqRaftPeerClient`](lib/client/zmq_raft_peer_client.js)
 - [`raft.client.ZmqRaftPeerSub`](lib/client/zmq_raft_peer_sub.js)
 - [`raft.client.ZmqRaftClient`](lib/client/zmq_raft_client.js)
 - [`raft.client.ZmqRaftSubscriber`](lib/client/zmq_raft_subscriber.js)
 
-- [`raft.protocol.FramesProtocol`](lib/protocol/frames_protocol.js)
-- [`raft.protocol.Protocols`](lib/protocol/index.js)
+Data parsers:
+
+- [`raft.common.LogEntry`](lib/common/log_entry.js)
+- [`common.SnapshotChunk`](lib/common/snapshot_chunk.js)
 
 Public intermediate common classes for building implementations:
+
 - [`raft.common.ClusterConfiguration`](lib/common/cluster_configuration.js)
 - [`raft.common.IndexFile`](lib/common/indexfile.js)
 - [`raft.common.ReadyEmitter`](lib/common/readyemitter.js)
@@ -147,10 +157,10 @@ Public intermediate common classes for building implementations:
 - [`raft.client.ZmqProtocolSocket`](lib/client/zmq_protocol_socket.js)
 - [`raft.server.ZmqRpcSocket`](lib/server/zmq_rpc_socket.js)
 
-Public base api classes for building implementations:
+Protocol components:
 
-- [`raft.api.PersistenceBase`](lib/api/persistence_base.js)
-- [`raft.api.StateMachineBase`](lib/api/state_machine_base.js)
+- [`raft.protocol.FramesProtocol`](lib/protocol/frames_protocol.js)
+- [`raft.protocol.Protocols`](lib/protocol/index.js)
 
 Helper utilities:
 
@@ -161,8 +171,33 @@ Helper utilities:
 - [`raft.utils.fsutil`](lib/utils/fsutil.js): file utilities.
 
 
-Usage
------
+Use cases
+---------
+
+The author envisions ØMQ Raft Server usage in two basic scenarios:
+
+1. Scenario - in-process RAFT peer.
+
+In this scenario, each application instance embeds a single RAFT peer instance. All application instances are run on different machines and form a RAFT cluster.
+
+This scenario plays best if the number of server instances is uneven and predictable. Adding new server instances will require updating the RAFT configuration. This scenario provides the best state update latency.
+
+* The application embeds the RAFT peer, e.g. using [`raft.server.builder`](lib/server/builder.js).
+* The application then implements its own state machine by extending [`raft.api.StateMachineBase`](lib/api/state_machine_base.js) and providing it to the builder's `factory` option. The State Machine instance receives the committed log entries and can update itself or a local database file.
+* The application utilizes the [`raft.client.ZmqRaftClient`](lib/client/zmq_raft_client.js#L409) class to update RAFT state with `requestUpdate` method.
+
+2. Scenario - external RAFT peer.
+
+In this scenario, the RAFT peers run as stand-alone processes e.g. using `bin/zmq-raft.js` on different machines. The RAFT peer processes form a RAFT cluster, and applications can access it remotely through a network. The number of application instances can differ from the number of RAFT peers. The applications can come and go dynamically without impacting the RAFT configuration. The number of RAFT peers is changeable through cluster configuration change protocol.
+
+It is the most flexible scenario, but the state update latency may be slightly worse.
+
+* The RAFT peer servers are run as standalone processes and implement the [`raft.server.BroadcastStateMachine`](lib/server/broadcast_state_machine.js) state machine.
+* The application utilizes the [`raft.client.ZmqRaftSubscriber`](lib/client/zmq_raft_subscriber.js) to receive both the committed log entries and update the RAFT cluster via standard Node.JS `Duplex` stream interface.
+
+
+How To
+------
 
 Building a Raft server requires to assemble component class instances for:
 
@@ -240,7 +275,7 @@ raft.server.builder.build({
 
 ### Quick Start Guide.
 
-For testing, to quickly setup the 0MQ Raft server with the Broadcasting State Machine use `bin/zmq-raft.js`:
+For testing, or to quickly setup the 0MQ Raft server with the Broadcasting State Machine use `bin/zmq-raft.js`:
 
 ```
   Usage: zmq-raft [options] [id]
@@ -367,7 +402,7 @@ After the peer has been successfully removed, if it wasn't a leader during the c
 
 The log entry format is described [here](PROTO.md). There are several API methods that provide entries as raw data Buffers. In those instances [`raft.common.LogEntry`](lib/common/log_entry.js) API can be used to interpret each entry.
 
-Please note that not all log entries contains state data. Log entries are also created for cluster configuration changes and checkpointing (see [RAFT](RAFT.md)).
+Please note that not all log entries contain state data. Log entries are also created for cluster configuration changes and checkpointing (see [RAFT](RAFT.md)).
 
 Here is an example on how to interpret log entries when extending [`raft.api.StateMachineBase`](lib/api/state_machine_base.js):
 
