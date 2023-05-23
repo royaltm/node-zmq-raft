@@ -32,7 +32,7 @@ The RAFT log's `entry` data is constructed as follows:
 - 7-byte log entry term (least significant byte first),
 - arbitrary log data.
 
-The `CONFIG` entry data is a `MessagePack` encoded peer list and depending on whether it is a transitional config or the final config the structure is either an object:
+The `CONFIG` log data is a `MessagePack` encoded peer list and depending on whether it is a transitional config or the final config the structure is either an object:
 
 ```
 { old: old_peer_list,
@@ -42,7 +42,7 @@ or just a final `peer_list` array.
 
 The `peer_list` as an `Array<Peer>` where each `Peer` is a tuple of strings: `[peer_id, peer_url]`.
 
-The `CHECKPOINT` entry data is a single byte `0xC0` and represent `MessagePack` encoded `nil`.
+The `CHECKPOINT` log data is a single byte `0xC0` and represents `MessagePack` encoded `nil`.
 
 
 ### Examples:
