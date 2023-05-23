@@ -188,11 +188,11 @@ This scenario plays best if the number of server instances is uneven and predict
 
 2. Scenario - external RAFT peer.
 
-In this scenario, the RAFT peers run as stand-alone processes e.g. using `bin/zmq-raft.js` on different machines. The RAFT peer processes form a RAFT cluster, and applications can access it remotely through a network. The number of application instances can differ from the number of RAFT peers. The applications can come and go dynamically without impacting the RAFT configuration. The number of RAFT peers is changeable through cluster configuration change protocol.
+In this scenario, the RAFT peers run as stand-alone processes e.g. using `bin/zmq-raft.js` on different machines. The RAFT peer isntances form a RAFT cluster, and applications can access it remotely through a network. The number of application instances can differ from the number of RAFT peers. The applications can come and go dynamically without impacting the RAFT configuration. The number of RAFT peers is changeable through cluster configuration change protocol.
 
 It is the most flexible scenario, but the state update latency may be slightly worse.
 
-* The RAFT peer servers are run as standalone processes and implement the [`raft.server.BroadcastStateMachine`](lib/server/broadcast_state_machine.js) state machine.
+* The RAFT peer servers run as standalone processes and implement the [`raft.server.BroadcastStateMachine`](lib/server/broadcast_state_machine.js) state machine.
 * The application utilizes the [`raft.client.ZmqRaftSubscriber`](lib/client/zmq_raft_subscriber.js) to receive both the committed log entries and update the RAFT cluster via standard Node.JS `Duplex` stream interface.
 
 
@@ -398,7 +398,7 @@ DEBUG=* bin/zr-config.js -c config/example.hjson -d tcp://127.0.0.1:8347/4
 After the peer has been successfully removed, if it wasn't a leader during the configuration update it will most probably become a CANDIDATE. It happens when the removed peer isn't updated with the final `Cnew` configuration. This is ok, because cluster members will ignore voting requests from non-member peers. For more information on membership changes read [here](RAFT.md).
 
 
-### Interpreting log entries
+### Interpreting log entries.
 
 The log entry format is described [here](PROTO.md). There are several API methods that provide entries as raw data Buffers. In those instances [`raft.common.LogEntry`](lib/common/log_entry.js) API can be used to interpret each entry.
 
@@ -483,5 +483,84 @@ stream.on('data', obj => {
       snapshot.commit();
     }
   }
+});
+```
+
+
+### Updating state.
+
+The state of the cluster can be updated using the [Request Update RPC](PROTO.md#requestupdate-rpc).
+
+Depending on chosen scenario, use either a ['ZmqRaftClient#requestUpdate'](lib/client/zmq_raft_client.js#L409) method or use the [`stream.Writable`](https://nodejs.org/dist/latest-v18.x/docs/api/stream.html#writable-streams) side of the [`raft.client.ZmqRaftSubscriber`](lib/client/zmq_raft_subscriber.js) `Duplex` API.
+
+Scenario [1](#use-cases):
+
+```js
+const stateMachine = MyStateMachine(/* ... */);
+// ...
+const seedPeers = ["tcp://raft-host-1.local:8047", "tcp://raft-host-2.local:8047", "tcp://raft-host-3.local:8047"];
+// seed peers are only here for initial discovery, ZmqRaftClient retrieves the actual peer list from any RAFT server it connects to initially
+const client = new raft.client.ZmqRaftClient(seedPeers, {secret: mySecret, lazy: true, heartbeat: 5000});
+// keep the client instance through the lifetime of your application, so it can keep track of the cluster membership changes
+
+async function requestUpdate(txData) {
+  const serializedTxData = Buffer.from(JSON.stringify(txData));
+  const requestId = raft.utils.id.genIdent();
+  const logIndex = await client.requestUpdate(requestId, serializedTxData);
+  console.log('state updated with log tx: %d, request-id: %s', logIndex, requestId);
+  return logIndex;
+} 
+
+// sometimes your application may want to check if the current data is "fresh" by comparing the
+// last log index applied to the state machine with the log index of the last known update committed.
+stateMachine.lastUpdateLogIndex = 0;
+
+requestUpdate({foo: 1}).then(index => {
+  if (index > stateMachine.lastUpdateLogIndex) {
+    stateMachine.lastUpdateLogIndex = index;
+  }
+  notifyIsFresh(stateMachine.lastApplied >= stateMachine.lastUpdateLogIndex);
+});
+
+// somewhere in your state machine implementation
+class MyStateMachine extends raft.api.StateMachineBase {
+    //...
+    applyEntries(logEntries, nextIndex, currentTerm, snapshot) {
+      // ...
+      let res = super.applyEntries(logEntries, nextIndex, currentTerm, snapshot);
+      notifyIsFresh(this.lastApplied >= this.lastUpdateLogIndex);
+      return res;
+    }
+}
+```
+
+Scenario [2](#use-cases):
+
+```js
+const seedPeers = ["tcp://raft-host-1.local:8047", "tcp://raft-host-2.local:8047", "tcp://raft-host-3.local:8047"];
+const sub = new raft.client.ZmqRaftSubscriber(seedPeers, {secret: mySecret, lastIndex: localLastIndex||0});
+// keep the sub instance through the lifetime of your application
+
+function requestUpdate(txData) {
+  const serializedTxData = Buffer.from(JSON.stringify(txData));
+  const requestId = raft.utils.id.genIdent();
+  const updateRequest = raft.common.LogEntry.UpdateRequest.bufferToUpdateRequest(serializedTxData, requestId);
+  notifyIsFresh(false);
+  return sub.write(updateRequest);
+} 
+
+// ...
+if (requestUpdate(txData)) {
+  console.log("no backpressure");
+  nextIteration();
+}
+else {
+  console.log("backpressured");
+  sub.once('drain', () => nextIteration());
+}
+
+sub.on('data', obj => {
+  // ...
+  notifyIsFresh(obj.logIndex >= sub.lastUpdateLogIndex);
 });
 ```
