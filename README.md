@@ -497,6 +497,12 @@ Scenario [1](#use-cases):
 
 ```js
 const stateMachine = new MyStateMachine(/* ... */);
+const raftPeer = raft.server.builder.build({
+  // ...
+  factory: {
+    state: (_) => stateMachine
+  }
+})
 // ...
 const seedPeers = ["tcp://raft-host-1.local:8047", "tcp://raft-host-2.local:8047", "tcp://raft-host-3.local:8047"];
 // seed peers are only here for initial discovery, ZmqRaftClient retrieves the actual peer list from any RAFT server it connects to initially
