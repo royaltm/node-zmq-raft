@@ -9,6 +9,15 @@
     "zr-log-tool": "./bin/zr-tool.js",
     "zr-config": "./bin/zr-config.js"
   },
+  "files": [
+    "index.js",
+    "bin",
+    "config",
+    "example",
+    "lib",
+    "static",
+    "*.md"
+  ],
   "scripts": {
     "cli": "node ./bin/console.js",
     "test": "tap -t 600 --no-cov test/*/test.*.js"
