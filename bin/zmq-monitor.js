@@ -7,7 +7,7 @@ const { format } = require('util');
 
 const { red, bgGreen, grey } = require('colors/safe');
 
-const program = require('commander')
+const { program } = require('commander')
     , debug = require('debug')('zmq-monitor');
 
 const raft = require('..');

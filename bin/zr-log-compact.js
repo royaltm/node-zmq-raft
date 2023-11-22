@@ -11,7 +11,7 @@ const path = require('path')
 
 const { Z_NO_COMPRESSION, Z_BEST_COMPRESSION } = require('zlib');
 
-const program = require('commander')
+const { program } = require('commander')
     , debug = require('debug')('zmq-raft:log-compact');
 
 const pkg = require('../package.json');

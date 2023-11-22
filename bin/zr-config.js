@@ -9,7 +9,7 @@ if (require.main !== module) throw new Error("zr-config.js must be run directly 
 const url = require('url')
     , assert = require('assert');
 
-const program = require('commander');
+const { program } = require('commander');
 
 const { decode: decodeMsgPack } = require('msgpack-lite');
 

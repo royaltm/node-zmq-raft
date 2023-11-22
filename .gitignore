@@ -17,3 +17,4 @@ npm-debug.log
 .tern-port
 .node_repl_history
 .node_repl_history.tmp-*
+.tap

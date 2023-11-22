@@ -17,7 +17,7 @@ const { createUnzip, Z_BEST_COMPRESSION } = require('zlib');
 
 const mp = require('msgpack-lite');
 
-const program = require('commander')
+const { program } = require('commander')
     , debug = require('debug')('zmq-raft:tool');
 
 const pkg = require('../package.json');

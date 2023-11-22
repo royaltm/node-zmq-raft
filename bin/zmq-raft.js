@@ -9,7 +9,7 @@ if (require.main !== module) throw new Error("zmq-raft.js must be run directly f
 const path = require('path');
 const parseUrl = require('url').parse;
 
-const program = require('commander')
+const { program } = require('commander')
     , debug = require('debug')('zmq-raft');
 
 const pkg = require('../package.json');
