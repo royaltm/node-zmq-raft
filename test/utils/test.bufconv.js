@@ -446,7 +446,7 @@ test('readBufIntLE', t => {
   t.equal(bufconv.readBufIntLE(Buffer.from([255,255,255,255,255,255,31,0,0,0])), bufconv.MAX_ALLOWED_INTEGER);
   t.equal(bufconv.readBufIntLE(Buffer.from([255,255,255,255,255,255,31])), bufconv.MAX_ALLOWED_INTEGER);
   t.equal(bufconv.readBufIntLE(Buffer.from([254,255,255,255,255,255,31,0,0,0])), bufconv.MAX_ALLOWED_INTEGER - 1);
-  t.throws(() => bufconv.readBufIntLE(Buffer.from([1,0,0,0,0,0,224,0,0,0])), bufconv.MIN_ALLOWED_INTEGER,
+  t.throws(() => bufconv.readBufIntLE(Buffer.from([1,0,0,0,0,0,224,0,0,0])),
     new Error("integer read from a buffer is above maximum allowed"));
   t.equal(bufconv.readBufIntLE(Buffer.from([1,0,0,0,0,0,224,0,0,0]),0,7), bufconv.MIN_ALLOWED_INTEGER);
   t.equal(bufconv.readBufIntLE(Buffer.from([1,0,0,0,0,0,224])), bufconv.MIN_ALLOWED_INTEGER);
