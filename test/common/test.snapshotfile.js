@@ -8,7 +8,7 @@ const fs = require('fs')
     , path = require('path')
     , crypto = require('crypto')
     , { Readable } = require('stream')
-    , mp = require('msgpack-lite')
+    , mp = require('@royaltm/msgpack-lite')
 const test = require('tap').test;
 
 const raft = require('../..');

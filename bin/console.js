@@ -28,7 +28,7 @@ const ben = require('ben');
 const colors = require('colors/safe')
     , { cyan, green, grey, magenta, red, yellow, bgGreen } = colors;
 
-const msgpack = require('msgpack-lite');
+const msgpack = require('@royaltm/msgpack-lite');
 
 const lookup = require('../lib/utils/dns_lookup').hostsToZmqUrls;
 

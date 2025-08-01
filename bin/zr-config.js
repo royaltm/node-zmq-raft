@@ -11,7 +11,7 @@ const url = require('url')
 
 const { program } = require('commander');
 
-const { decode: decodeMsgPack } = require('msgpack-lite');
+const { decode: decodeMsgPack } = require('@royaltm/msgpack-lite');
 
 const pkg = require('../package.json');
 

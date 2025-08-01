@@ -24,7 +24,7 @@ const RaftPersistence = require('../lib/server/raft_persistence');
 
 const { lpad } = require('../lib/utils/helpers');
 const { genIdent, isIdent } = require('../lib/utils/id');
-const msgpack = require('msgpack-lite');
+const msgpack = require('@royaltm/msgpack-lite');
 
 var client;
 var subs;

@@ -20,7 +20,7 @@
   ],
   "scripts": {
     "cli": "node ./bin/console.js",
-    "test": "tap -t 600 --no-cov test/*/test.*.js"
+    "test": "tap -t 600 --disable-coverage test/*/test.*.js"
   },
   "repository": {
     "type": "git",
@@ -49,13 +49,13 @@
     "hjson": "^3.2.2",
     "js-yaml": "^4.1.0",
     "mkdirp": "^3.0.1",
-    "msgpack-lite": "^0.1.26",
+    "@royaltm/msgpack-lite": "github:royaltm/msgpack-lite#0.1.27",
     "toml": "^3.0.0",
     "zeromq": "~5.3.1"
   },
   "devDependencies": {
     "ben": "0.0.0",
     "colors": "^1.4.0",
-    "tap": "^16.3.9"
+    "tap": "^20.0.3"
   }
 }

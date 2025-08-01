@@ -15,7 +15,7 @@ const path = require('path')
 
 const { createUnzip, Z_BEST_COMPRESSION } = require('zlib');
 
-const mp = require('msgpack-lite');
+const mp = require('@royaltm/msgpack-lite');
 
 const { program } = require('commander')
     , debug = require('debug')('zmq-raft:tool');
