@@ -1,3 +1,7 @@
+0.7.1
+
+* fixed zmq-monitor.js parsing of arguments (@jcalfee via pr #26)
+
 0.7.0
 
 * tap bumped to ^20.0.3
