@@ -35,7 +35,7 @@ const options = {
     // timeout: 5000,
     // serverElectionGraceDelay: 15000,
     secret: opts.cluster,
-    urls: opts.args
+    urls: program.args
 };
 
 if (opts.urlsOnly) {
