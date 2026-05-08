@@ -45,17 +45,17 @@
   },
   "homepage": "https://github.com/royaltm/node-zmq-raft#readme",
   "dependencies": {
+    "@royaltm/msgpack-lite": "github:royaltm/msgpack-lite#0.1.27",
     "commander": "^11.1.0",
     "hjson": "^3.2.2",
     "js-yaml": "^4.1.1",
     "mkdirp": "^3.0.1",
-    "@royaltm/msgpack-lite": "github:royaltm/msgpack-lite#0.1.27",
-    "toml": "^4.1.1",
+    "toml": "^3.0.0",
     "zeromq": "~5.3.1"
   },
   "devDependencies": {
     "ben": "0.0.0",
     "colors": "^1.4.0",
-    "tap": "^21.7.2"
+    "tap": "^20.0.3"
   }
 }
