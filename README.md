@@ -91,6 +91,16 @@ Client tools:
 * [`ZmqRaftClient`](lib/client/zmq_raft_client.js) implements an easy to use cluster-aware client, w/ peer failover, configuration auto-discovery etc.
 
 
+### Arbiters
+
+Arbiters are Raft peers that never advance to CANDIDATES, so they cannot become LEADERS,
+but otherwise they participate in elections and receive log data from the current cluster leader.
+
+This function allows for the complementation of the number of cluster members to an odd number,
+in which the additional member does not assume the basic function but instead increases the
+robustness of the cluster.
+
+
 Broadcasting State Machine (BSM)
 --------------------------------
 
@@ -278,19 +288,20 @@ raft.server.builder.build({
 For testing, or to quickly setup the 0MQ Raft server with the Broadcasting State Machine use `bin/zmq-raft.js`:
 
 ```
-  Usage: zmq-raft [options] [id]
+Usage: zmq-raft [options] [id]
 
-  start zmq-raft cluster peer using provided config and optional id
+start zmq-raft cluster peer using provided config and optional id
 
-  Options:
+Options:
+  -V, --version        output the version number
+  -c, --config <file>  config file (default: "/src/work/config/default.hjson")
+  -b, --bind <url>     router bind url
+  -p, --pub <url>      broadcast state machine url
+  -w, --www <url>      webmonitor url
+  -a, --arbiter        run in ARBITER mode overriding configuration
+  --ns [namespace]     raft config root namespace (default: "raft")
+  -h, --help           display help for command
 
-    -V, --version        output the version number
-    -c, --config <file>  config file (default: config\default.hjson)
-    -b, --bind <url>     router bind url
-    -p, --pub <url>      broadcast state machine url
-    -w, --www <url>      webmonitor url
-    --ns [namespace]     raft config root namespace (default: raft)
-    -h, --help           output usage information
 ```
 
 e.g.:

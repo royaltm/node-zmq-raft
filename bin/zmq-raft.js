@@ -28,6 +28,7 @@ program
   .option('-b, --bind <url>', 'router bind url')
   .option('-p, --pub <url>', 'broadcast state machine url')
   .option('-w, --www <url>', 'webmonitor url')
+  .option('-a, --arbiter', 'run in ARBITER mode overriding configuration')
   .option('--ns [namespace]', 'raft config root namespace', 'raft')
   .parse(process.argv);
 
@@ -60,6 +61,9 @@ readConfig(opts.config, opts.ns).then(config => {
   }
   if (opts.www) {
     setWebmonitorUrl(config, opts.www);
+  }
+  if (opts.arbiter) {
+    config.arbiter = true;
   }
 
   return raft.server.builder.build(config)

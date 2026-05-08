@@ -1,3 +1,9 @@
+0.8.0
+
+* ARBITER mode added
+* `arbiter` configuration switch added
+* bin/zmq-raft.js: new option `-a, --arbiter`
+
 0.7.1
 
 * fixed zmq-monitor.js parsing of arguments (@jcalfee via pr #26)

@@ -1,6 +1,6 @@
 {
   "name": "zmq-raft",
-  "version": "0.7.1",
+  "version": "0.8.0",
   "description": "An opinionated Raft implementation powered by ØMQ",
   "main": "index.js",
   "bin": {
@@ -45,11 +45,11 @@
   },
   "homepage": "https://github.com/royaltm/node-zmq-raft#readme",
   "dependencies": {
+    "@royaltm/msgpack-lite": "github:royaltm/msgpack-lite#0.1.27",
     "commander": "^11.1.0",
     "hjson": "^3.2.2",
-    "js-yaml": "^4.1.0",
+    "js-yaml": "^4.1.1",
     "mkdirp": "^3.0.1",
-    "@royaltm/msgpack-lite": "github:royaltm/msgpack-lite#0.1.27",
     "toml": "^3.0.0",
     "zeromq": "~5.3.1"
   },

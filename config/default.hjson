@@ -126,6 +126,12 @@ raft:
 
     # ZmqRaft extra features:
     #
+    # An arbiter node ignores election timeouts and simply never starts an election,
+    # thus preventing self from ever becoming a CANDIDATE. Otherwise an arbiter node
+    # in a multi-node cluster is always running as a FOLLOWER, taking part in RAFT
+    # elections (voting only) and receiving log updates. In case of a single node
+    # cluster the ARBITER node becomes a LEADER on startup only.
+    arbiter: false
     # Partitioned peers will eventually timeout and start new election terms.
     # They will repeat this process again and again until they eventually are re-connected
     # with the rest of the cluster.
